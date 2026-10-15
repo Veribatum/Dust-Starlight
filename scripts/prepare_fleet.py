@@ -1,18 +1,17 @@
 """Make streamed, texture-preserving game copies of the supplied Meshy fleet.
 
-Requires numpy, Pillow and VTK. Source uploads are never modified. Geometry
-reduction interpolates point data, keeping UVs and normals attached. A bounded
-vertex-collapse fallback handles ill-conditioned source meshes.
+Requires numpy, Pillow and Node.js. Source uploads are never modified. The
+vendored meshoptimizer 1.2 simplifier respects shell boundaries and keeps source
+positions, normals and UVs. Complex seam junctions use bounded attribute-aware
+relaxation only if strict seams cannot meet the budget. It never invents surfaces.
 """
-import argparse, hashlib, json, struct
+import argparse, hashlib, json, struct, subprocess, tempfile
 from concurrent.futures import ProcessPoolExecutor
 from io import BytesIO
 from pathlib import Path
 
 import numpy as np
 from PIL import Image
-import vtk
-from vtk.util.numpy_support import numpy_to_vtk, numpy_to_vtkIdTypeArray, vtk_to_numpy
 
 FILES = {
     'relay-station': 'Meshy_AI_interstellar_space_st_1013233859_texture.glb',
@@ -32,6 +31,11 @@ FILES = {
 }
 DTYPES = {5126:'<f4', 5125:'<u4', 5123:'<u2', 5121:'u1'}
 WIDTHS = {'SCALAR':1, 'VEC2':2, 'VEC3':3, 'VEC4':4}
+TRIANGLE_BUDGETS = {'icebound-carrier':40000,'leviathan':40000,'mothership':40000,
+                    'spire-cruiser':40000,'five-engine-hauler':30000,
+                    'scout':22000,'azure-voyager':25000,'crimson-vanguard':25000,
+                    'machine-frigate':24000,'spirit-of-fire':26000,
+                    'frontier-transport':25000,'vortex-z3':25000}
 
 def read_glb(path):
     raw = Path(path).read_bytes()
@@ -48,34 +52,33 @@ def attribute(doc, binary, index):
                       offset=v.get('byteOffset',0)+a.get('byteOffset',0),
                       strides=(stride,dtype.itemsize)).copy()
 
+def geometry_audit(points, faces, span=None):
+    span = float(np.ptp(points,axis=0).max()) if span is None else span
+    # Merge coincident UV-seam positions for measurement only, never for output.
+    positions, remap = np.unique(np.rint(points/(span*1e-6)).astype(np.int64),axis=0,return_inverse=True)
+    welded = remap[faces]
+    edges = np.concatenate([welded[:,[0,1]],welded[:,[1,2]],welded[:,[2,0]]]); edges.sort(axis=1)
+    edges, counts = np.unique(edges,axis=0,return_counts=True)
+    boundary = edges[counts==1]
+    length = float(np.linalg.norm((positions[boundary[:,0]]-positions[boundary[:,1]])*1e-6,axis=1).sum())
+    return {'boundary_edges':int(len(boundary)), 'boundary_length_normalized':length,
+            'nonmanifold_edges':int((counts>2).sum())}
+
 def reduce_mesh(points, normals, uv, faces, limit):
-    if len(faces) <= limit: return points, normals, uv, faces
-    poly = vtk.vtkPolyData(); vp = vtk.vtkPoints()
-    vp.SetData(numpy_to_vtk(points, deep=True)); poly.SetPoints(vp)
-    cells = vtk.vtkCellArray()
-    cells.SetData(numpy_to_vtkIdTypeArray(np.arange(0,len(faces)*3+1,3,dtype=np.int64),deep=True),
-                  numpy_to_vtkIdTypeArray(faces.reshape(-1).astype(np.int64),deep=True))
-    poly.SetPolys(cells)
-    n = numpy_to_vtk(normals,deep=True); n.SetName('Normals'); poly.GetPointData().SetNormals(n)
-    t = numpy_to_vtk(uv,deep=True); t.SetName('UV'); poly.GetPointData().SetTCoords(t)
-    dec = vtk.vtkQuadricDecimation(); dec.SetInputData(poly)
-    dec.SetTargetReduction(1-limit/len(faces)); dec.AttributeErrorMetricOff()
-    dec.MapPointDataOn(); dec.VolumePreservationOff(); dec.Update(); out = dec.GetOutput()
-    candidate = vtk_to_numpy(out.GetPoints().GetData())
-    lower,upper = points.min(axis=0),points.max(axis=0)
-    tolerance = np.ptp(points,axis=0).max()*.0005
-    if not np.isfinite(candidate).all() or (candidate < lower-tolerance).any() or (candidate > upper+tolerance).any():
-        # DecimatePro retains source positions, which rules out solver spikes.
-        fallback=vtk.vtkDecimatePro(); fallback.SetInputData(poly)
-        fallback.SetTargetReduction(1-limit/len(faces)); fallback.PreserveTopologyOff()
-        fallback.SplittingOn(); fallback.SetFeatureAngle(45); fallback.BoundaryVertexDeletionOn()
-        fallback.Update(); out=fallback.GetOutput()
-    p = vtk_to_numpy(out.GetPoints().GetData()).astype('<f4')
-    n = vtk_to_numpy(out.GetPointData().GetNormals()).astype('<f4')
-    n /= np.maximum(np.linalg.norm(n,axis=1,keepdims=True),1e-8)
-    t = vtk_to_numpy(out.GetPointData().GetTCoords()).astype('<f4')
-    f = vtk_to_numpy(out.GetPolys().GetConnectivityArray()).reshape(-1,3).astype('<u4')
-    return p,n,t,f
+    if len(faces) <= limit: return points, normals, uv, faces, 0, 'unchanged'
+    with tempfile.TemporaryDirectory(prefix='dust-fleet-') as temporary:
+        directory = Path(temporary)
+        request = {'triangles':limit,'output':str(directory/'reduced.bin')}
+        for key, data in [('positions',points),('normals',normals),('uv',uv),('indices',faces.astype('<u4'))]:
+            target = directory/(key+'.bin'); target.write_bytes(data.tobytes()); request[key]=str(target)
+        result = subprocess.run(['node',str(Path(__file__).with_name('simplify_mesh.mjs'))],
+                                input=json.dumps(request),capture_output=True,text=True,check=True)
+        details = json.loads(result.stdout)
+        reduced = np.fromfile(request['output'],dtype='<u4').reshape(-1,3)
+    # All output attributes come verbatim from the same source vertex. Compact
+    # storage without independently welding or distorting texture seams.
+    vertices, remap = np.unique(reduced,return_inverse=True)
+    return points[vertices],normals[vertices],uv[vertices],remap.reshape(-1,3).astype('<u4'),details['error'],details['mode']
 
 def prepare(task):
     key, name, source, destination = task
@@ -88,8 +91,12 @@ def prepare(task):
     f = attribute(doc,binary,primitive['indices']).reshape(-1,3)
     original_triangles = len(f)
     original_bounds = {'min':p.min(axis=0).tolist(),'max':p.max(axis=0).tolist()}
-    limit = 30000 if key in ['icebound-carrier','leviathan','mothership','spire-cruiser'] else 20000
-    p,n,uv,f = reduce_mesh(p,n,uv,f,limit)
+    span = float(np.ptp(p,axis=0).max()); original_geometry = geometry_audit(p,f,span)
+    limit = TRIANGLE_BUDGETS.get(key,20000)
+    p,n,uv,f,error,mode = reduce_mesh(p,n,uv,f,limit)
+    game_geometry = geometry_audit(p,f,span)
+    assert game_geometry['boundary_length_normalized'] <= original_geometry['boundary_length_normalized']*1.05+.002, key+' developed new shell cracks'
+    assert len(f)<=limit, key+' cannot meet its safe geometry budget; review this asset instead of forcing reduction'
     assert np.isfinite(p).all() and np.isfinite(n).all() and np.isfinite(uv).all()
     tolerance=(np.array(original_bounds['max'])-np.array(original_bounds['min'])).max()*.0005
     assert (p>=np.array(original_bounds['min'])-tolerance).all() and (p<=np.array(original_bounds['max'])+tolerance).all(), key+' shape exceeded source bounds'
@@ -113,14 +120,20 @@ def prepare(task):
     doc['bufferViews']=views; doc['accessors']=accessors; doc['buffers']=[{'byteLength':len(blob)}]
     primitive['attributes']={'POSITION':0,'TEXCOORD_0':1,'NORMAL':2}; primitive['indices']=3
     doc['extras']={'source_name':name,'source_sha256':hashlib.sha256(raw).hexdigest(),
-                   'original_triangles':original_triangles,'game_triangles':len(f),'source_bounds':original_bounds}
+                   'original_triangles':original_triangles,'game_triangles':len(f),'source_bounds':original_bounds,
+                   'preparation':'meshoptimizer-1.2-attribute-aware','simplification_mode':mode,'triangle_budget':limit,
+                   'appearance_error':error,'geometry_weld_span':span,
+                   'source_geometry':original_geometry,'game_geometry':game_geometry}
     encoded=json.dumps(doc,separators=(',',':')).encode(); encoded+=b' '*((-len(encoded))%4)
     blob.extend(b'\0'*((-len(blob))%4))
     out=struct.pack('<4sII',b'glTF',2,28+len(encoded)+len(blob))+struct.pack('<II',len(encoded),0x4E4F534A)+encoded+struct.pack('<II',len(blob),0x004E4942)+blob
     target=Path(destination)/(key+'.glb'); target.parent.mkdir(parents=True,exist_ok=True); target.write_bytes(out)
     result={'id':key,'source':name,'source_sha256':doc['extras']['source_sha256'],'source_bytes':len(raw),'bytes':len(out),
-            'original_triangles':original_triangles,'triangles':len(f),'textures':dimensions,'source_bounds':original_bounds}
-    print(f'{key}: {original_triangles:,} → {len(f):,} triangles; {len(raw)/1e6:.1f} → {len(out)/1e6:.2f} MB',flush=True)
+            'original_triangles':original_triangles,'triangles':len(f),'textures':dimensions,'source_bounds':original_bounds,
+            'triangle_budget':limit,'appearance_error':error,'preparation':doc['extras']['preparation'],'simplification_mode':mode,
+            'geometry_weld_span':span,
+            'source_geometry':original_geometry,'game_geometry':game_geometry}
+    print(f'{key}: {original_triangles:,} → {len(f):,} triangles; {len(raw)/1e6:.1f} → {len(out)/1e6:.2f} MB; shell boundary {original_geometry["boundary_edges"]:,} → {game_geometry["boundary_edges"]:,}',flush=True)
     return result
 
 if __name__=='__main__':

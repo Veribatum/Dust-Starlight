@@ -74,9 +74,9 @@
     "source": "Icebound_Carrier.glb",
     "source_sha256": "c0f3abeb44acba994272aa4cd7acb6f462a04fcb44bc0643e2c8978bb24987dc",
     "source_bytes": 47088420,
-    "bytes": 1860212,
+    "bytes": 2172792,
     "original_triangles": 600494,
-    "triangles": 29999,
+    "triangles": 39986,
     "textures": [
       [
         1024,
@@ -106,6 +106,21 @@
         0.23122599720954895,
         0.3579680025577545
       ]
+    },
+    "triangle_budget": 40000,
+    "appearance_error": 0.0018909336067736149,
+    "preparation": "meshoptimizer-1.2-attribute-aware",
+    "simplification_mode": "strict-seams",
+    "geometry_weld_span": 1.9002740383148193,
+    "source_geometry": {
+      "boundary_edges": 0,
+      "boundary_length_normalized": 0.0,
+      "nonmanifold_edges": 0
+    },
+    "game_geometry": {
+      "boundary_edges": 0,
+      "boundary_length_normalized": 0.0,
+      "nonmanifold_edges": 145
     }
   },
   {
@@ -113,9 +128,9 @@
     "source": "long_hulled_5_engine.glb",
     "source_sha256": "31a5fbcc1dcced07642aa78716a9951ce6e5ce0a97a18a9bd67cc8d5f8369110",
     "source_bytes": 25173200,
-    "bytes": 1659648,
+    "bytes": 2030948,
     "original_triangles": 507928,
-    "triangles": 20000,
+    "triangles": 30000,
     "textures": [
       [
         1024,
@@ -141,6 +156,21 @@
         0.3674269914627075,
         0.3093859851360321
       ]
+    },
+    "triangle_budget": 30000,
+    "appearance_error": 0.0019198638619855046,
+    "preparation": "meshoptimizer-1.2-attribute-aware",
+    "simplification_mode": "strict-seams",
+    "geometry_weld_span": 1.9195420742034912,
+    "source_geometry": {
+      "boundary_edges": 154,
+      "boundary_length_normalized": 0.16796561221651962,
+      "nonmanifold_edges": 153
+    },
+    "game_geometry": {
+      "boundary_edges": 153,
+      "boundary_length_normalized": 0.16573694882061873,
+      "nonmanifold_edges": 238
     }
   },
   {
@@ -148,9 +178,9 @@
     "source": "Meshy_AI__0928010253_texture.glb",
     "source_sha256": "00b3dcc5966e92bce1f91f83d81774ad9e68607a2151b455c76c193babacd362",
     "source_bytes": 78602108,
-    "bytes": 2111784,
+    "bytes": 2543692,
     "original_triangles": 1277464,
-    "triangles": 29999,
+    "triangles": 39999,
     "textures": [
       [
         1024,
@@ -180,6 +210,21 @@
         0.4003670811653137,
         0.9999620914459229
       ]
+    },
+    "triangle_budget": 40000,
+    "appearance_error": 0.00185925024561584,
+    "preparation": "meshoptimizer-1.2-attribute-aware",
+    "simplification_mode": "bounded-seam-relaxation",
+    "geometry_weld_span": 1.9999362230300903,
+    "source_geometry": {
+      "boundary_edges": 226,
+      "boundary_length_normalized": 0.21467907907510353,
+      "nonmanifold_edges": 233
+    },
+    "game_geometry": {
+      "boundary_edges": 46,
+      "boundary_length_normalized": 0.058747685137096,
+      "nonmanifold_edges": 59
     }
   },
   {
@@ -187,9 +232,9 @@
     "source": "Meshy_AI_A_standalone_sleek_sc_0928010608_texture.glb",
     "source_sha256": "148b6bb41e7915172195885804f981c102dd19a47beeb8c6ee1ad89bdb4a916e",
     "source_bytes": 52663148,
-    "bytes": 1555688,
+    "bytes": 1585380,
     "original_triangles": 620031,
-    "triangles": 20000,
+    "triangles": 21964,
     "textures": [
       [
         1024,
@@ -219,6 +264,21 @@
         0.22027002274990082,
         0.7578931450843811
       ]
+    },
+    "triangle_budget": 22000,
+    "appearance_error": 0.002583371242508292,
+    "preparation": "meshoptimizer-1.2-attribute-aware",
+    "simplification_mode": "bounded-seam-relaxation",
+    "geometry_weld_span": 1.899482011795044,
+    "source_geometry": {
+      "boundary_edges": 458,
+      "boundary_length_normalized": 0.41989511032830834,
+      "nonmanifold_edges": 443
+    },
+    "game_geometry": {
+      "boundary_edges": 121,
+      "boundary_length_normalized": 0.1325124722681008,
+      "nonmanifold_edges": 184
     }
   },
   {
@@ -226,9 +286,9 @@
     "source": "Meshy_AI_Azure_Voyager_0928010427_texture.glb",
     "source_sha256": "0c23c47ce36114e36ba3706f920267819004ef7d14a896a4b8bc09ea76a0d884",
     "source_bytes": 68232100,
-    "bytes": 1571460,
+    "bytes": 1710660,
     "original_triangles": 1111255,
-    "triangles": 20000,
+    "triangles": 24903,
     "textures": [
       [
         1024,
@@ -258,6 +318,21 @@
         0.4570610523223877,
         0.949467122554779
       ]
+    },
+    "triangle_budget": 25000,
+    "appearance_error": 0.0041425395756959915,
+    "preparation": "meshoptimizer-1.2-attribute-aware",
+    "simplification_mode": "bounded-seam-relaxation",
+    "geometry_weld_span": 1.9006502628326416,
+    "source_geometry": {
+      "boundary_edges": 941,
+      "boundary_length_normalized": 0.8741618339407569,
+      "nonmanifold_edges": 995
+    },
+    "game_geometry": {
+      "boundary_edges": 239,
+      "boundary_length_normalized": 0.31030698251590405,
+      "nonmanifold_edges": 474
     }
   },
   {
@@ -265,9 +340,9 @@
     "source": "Meshy_AI_Crimson_Vanguard_0928004443_texture.glb",
     "source_sha256": "9d690d120cde17adc0f46796c75e2c808f8428ecb5ebbc45b541d98bc27e313d",
     "source_bytes": 45100588,
-    "bytes": 1885132,
+    "bytes": 1371664,
     "original_triangles": 1234886,
-    "triangles": 20000,
+    "triangles": 24816,
     "textures": [
       [
         1024,
@@ -297,6 +372,21 @@
         0.44057801365852356,
         0.659807026386261
       ]
+    },
+    "triangle_budget": 25000,
+    "appearance_error": 0.008284438401460648,
+    "preparation": "meshoptimizer-1.2-attribute-aware",
+    "simplification_mode": "bounded-seam-relaxation",
+    "geometry_weld_span": 1.8992060422897339,
+    "source_geometry": {
+      "boundary_edges": 0,
+      "boundary_length_normalized": 0.0,
+      "nonmanifold_edges": 0
+    },
+    "game_geometry": {
+      "boundary_edges": 0,
+      "boundary_length_normalized": 0.0,
+      "nonmanifold_edges": 893
     }
   },
   {
@@ -304,9 +394,9 @@
     "source": "Meshy_AI_Leviathan_of_the_Void_0928004611_texture.glb",
     "source_sha256": "3ac25c483919a3bb42f10392a01a0d38fcae0456762c76913c8e97802a7a8819",
     "source_bytes": 19931564,
-    "bytes": 1472976,
+    "bytes": 1763356,
     "original_triangles": 401794,
-    "triangles": 29999,
+    "triangles": 40000,
     "textures": [
       [
         1024,
@@ -336,6 +426,21 @@
         0.19457200169563293,
         0.35195600986480713
       ]
+    },
+    "triangle_budget": 40000,
+    "appearance_error": 0.0010917894542217255,
+    "preparation": "meshoptimizer-1.2-attribute-aware",
+    "simplification_mode": "strict-seams",
+    "geometry_weld_span": 1.8990929126739502,
+    "source_geometry": {
+      "boundary_edges": 0,
+      "boundary_length_normalized": 0.0,
+      "nonmanifold_edges": 0
+    },
+    "game_geometry": {
+      "boundary_edges": 0,
+      "boundary_length_normalized": 0.0,
+      "nonmanifold_edges": 32
     }
   },
   {
@@ -343,9 +448,9 @@
     "source": "Meshy_AI_machine_frigate_0928011610_texture.glb",
     "source_sha256": "36c905d87296a26837d76de8aa6839c14f691cddcc8177e3a85853003f505542",
     "source_bytes": 11102412,
-    "bytes": 1423836,
+    "bytes": 1544084,
     "original_triangles": 23855,
-    "triangles": 20000,
+    "triangles": 23855,
     "textures": [
       [
         1024,
@@ -371,6 +476,21 @@
         0.23679065704345703,
         0.5068492889404297
       ]
+    },
+    "triangle_budget": 24000,
+    "appearance_error": 0,
+    "preparation": "meshoptimizer-1.2-attribute-aware",
+    "simplification_mode": "unchanged",
+    "geometry_weld_span": 1.9060664176940918,
+    "source_geometry": {
+      "boundary_edges": 9,
+      "boundary_length_normalized": 0.08281585942246561,
+      "nonmanifold_edges": 46
+    },
+    "game_geometry": {
+      "boundary_edges": 9,
+      "boundary_length_normalized": 0.08281585942246561,
+      "nonmanifold_edges": 46
     }
   },
   {
@@ -378,9 +498,9 @@
     "source": "Meshy_AI_Spirit_of_Fire_0928003231_texture.glb",
     "source_sha256": "86b016150f29a9e644bc49bde112e3cbabf43ecce302e3a13b50abca4bf35fc4",
     "source_bytes": 41681880,
-    "bytes": 1944524,
+    "bytes": 1618172,
     "original_triangles": 1024867,
-    "triangles": 20000,
+    "triangles": 25985,
     "textures": [
       [
         1024,
@@ -410,6 +530,21 @@
         0.27749103307724,
         0.5115700364112854
       ]
+    },
+    "triangle_budget": 26000,
+    "appearance_error": 0.003781964536756277,
+    "preparation": "meshoptimizer-1.2-attribute-aware",
+    "simplification_mode": "bounded-seam-relaxation",
+    "geometry_weld_span": 1.89936101436615,
+    "source_geometry": {
+      "boundary_edges": 698,
+      "boundary_length_normalized": 1.1100007672759487,
+      "nonmanifold_edges": 606
+    },
+    "game_geometry": {
+      "boundary_edges": 245,
+      "boundary_length_normalized": 0.7178756781543727,
+      "nonmanifold_edges": 252
     }
   },
   {
@@ -417,9 +552,9 @@
     "source": "Meshy_AI_Ultra_realistic_mothe_0928005956_texture.glb",
     "source_sha256": "91f32867fceb74705d384adab8dc83e389764893c712b23d7aa8f68702f8491a",
     "source_bytes": 25870648,
-    "bytes": 2021096,
+    "bytes": 2462624,
     "original_triangles": 457227,
-    "triangles": 30000,
+    "triangles": 39999,
     "textures": [
       [
         1024,
@@ -449,6 +584,21 @@
         0.2592330276966095,
         0.3978060483932495
       ]
+    },
+    "triangle_budget": 40000,
+    "appearance_error": 0.001581927645020187,
+    "preparation": "meshoptimizer-1.2-attribute-aware",
+    "simplification_mode": "strict-seams",
+    "geometry_weld_span": 1.8943690061569214,
+    "source_geometry": {
+      "boundary_edges": 278,
+      "boundary_length_normalized": 0.2609976915190264,
+      "nonmanifold_edges": 275
+    },
+    "game_geometry": {
+      "boundary_edges": 266,
+      "boundary_length_normalized": 0.24293378126159892,
+      "nonmanifold_edges": 373
     }
   },
   {
@@ -456,9 +606,9 @@
     "source": "Meshy_AI_Using_the_supplied_im_0927155333_texture.glb",
     "source_sha256": "447dea4f702d24feead33f5037c0681af520a70a5452da13c6cc65cb3dd45d9e",
     "source_bytes": 35864856,
-    "bytes": 2143548,
+    "bytes": 1786580,
     "original_triangles": 780582,
-    "triangles": 20000,
+    "triangles": 24884,
     "textures": [
       [
         1024,
@@ -488,6 +638,21 @@
         0.19722603261470795,
         0.4401770532131195
       ]
+    },
+    "triangle_budget": 25000,
+    "appearance_error": 0.003451491938903928,
+    "preparation": "meshoptimizer-1.2-attribute-aware",
+    "simplification_mode": "bounded-seam-relaxation",
+    "geometry_weld_span": 1.8996310234069824,
+    "source_geometry": {
+      "boundary_edges": 1365,
+      "boundary_length_normalized": 2.779671193760925,
+      "nonmanifold_edges": 800
+    },
+    "game_geometry": {
+      "boundary_edges": 802,
+      "boundary_length_normalized": 2.3329287866843607,
+      "nonmanifold_edges": 424
     }
   },
   {
@@ -495,9 +660,9 @@
     "source": "Meshy_AI_Vortex_Z3_0928011344_texture.glb",
     "source_sha256": "0c62a06d92a4db55d4f01f6d8dce2923739c1fbd52f2a48dc7cbf2be5c4b3a0d",
     "source_bytes": 36524164,
-    "bytes": 1457216,
+    "bytes": 1398760,
     "original_triangles": 855941,
-    "triangles": 20000,
+    "triangles": 24997,
     "textures": [
       [
         1024,
@@ -523,6 +688,21 @@
         0.2829774022102356,
         0.6394777297973633
       ]
+    },
+    "triangle_budget": 25000,
+    "appearance_error": 0.0032376504968851805,
+    "preparation": "meshoptimizer-1.2-attribute-aware",
+    "simplification_mode": "bounded-seam-relaxation",
+    "geometry_weld_span": 1.899261474609375,
+    "source_geometry": {
+      "boundary_edges": 201,
+      "boundary_length_normalized": 0.19476072346784812,
+      "nonmanifold_edges": 234
+    },
+    "game_geometry": {
+      "boundary_edges": 44,
+      "boundary_length_normalized": 0.0656232654476046,
+      "nonmanifold_edges": 77
     }
   }
 ]
