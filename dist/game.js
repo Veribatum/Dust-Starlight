@@ -1,13 +1,14 @@
-import {freshState,loadState,saveState,validateSave,stats,prices,trade,accept,deliver,abandon,upgrade,buyShip,hire,service,rescue,jump,jumpCost,systemById,addLog,money,freeHold,clamp,rng,SPACE_JOBS} from './world.js';
+import {freshState,validateSave,stats,prices,trade,accept,deliver,abandon,upgrade,buyShip,hire,service,rescue,jump,jumpCost,systemById,addLog,money,freeHold,clamp,rng,SPACE_JOBS} from './world.js';
 import {SpaceView,THREE} from './space.js';
 import {Flight} from './flight.js';
 import {ShipAudio} from './audio.js';
 import {UI} from './ui.js';
 import {mouseSteering,steeringCurve,throttleChange,loadPreferences,savePreferences} from './controls.js';
+import {VoyageSaves,SAVE_SLOTS} from './saves.js';
 
 export class Game {
   constructor(){
-    this.saved=loadState();this.state=this.saved||freshState();this.mode='menu';this.saveFailed=false;this.preferences=loadPreferences();this.invert=this.preferences.invert;this.audio=new ShipAudio();this.keys=new Set();this.pointer={x:0,y:0,fire:false,active:false};this.touch={x:0,y:0,fire:false,boost:false,interact:false};this.padPrevious=[];this.jumpT=0;this.jumpDestination=null;this.lastTime=performance.now();this.elapsed=0;this.hudTimer=0;this.saveTimer=0;this.started=false;
+    this.saves=new VoyageSaves();this.saved=this.saves.load('auto');this.state=this.saved||freshState();this.mode='menu';this.saveFailed=false;this.preferences=loadPreferences();this.invert=this.preferences.invert;this.audio=new ShipAudio();this.keys=new Set();this.pointer={x:0,y:0,fire:false,active:false};this.touch={x:0,y:0,fire:false,boost:false,interact:false};this.padPrevious=[];this.jumpT=0;this.jumpDestination=null;this.lastTime=performance.now();this.elapsed=0;this.hudTimer=0;this.saveTimer=0;this.started=false;
     this.view=new SpaceView(document.getElementById('space'));if(this.state.system!=='juniper')this.view.setSystem(this.state.system);this.view.setShip(this.state.ship);
     this.sim=new Flight(this.state,event=>this.event(event));this.ui=new UI(this);this.bindInputs();this.ui.init();this.makeWarp();requestAnimationFrame(t=>this.frame(t));
   }
@@ -15,13 +16,46 @@ export class Game {
   clearInput(){this.keys.clear();this.pointer={x:0,y:0,fire:false,active:false};this.touch.x=this.touch.y=0;this.touch.fire=this.touch.boost=this.touch.interact=false;this.joystickPointer=null;this.thrustPointer=null;this.contextPressAction=null;if(this.sim)this.sim.input={x:0,y:0,roll:0,fire:false,boost:false,interact:false};document.getElementById('stick').style.transform='';}
   currentMission(){return this.state.missions.find(m=>m.id===this.sim.target?.missionId)||this.state.missions.find(m=>m.id===this.ui.touchMissionId)||this.state.missions.find(m=>m.story)||this.state.missions[0];}
   cancelDeparture(){if(this.mode!=='departure')return;this.sim.departure=false;this.sim.boosting=false;this.jumpDestination=null;this.setMode('flight');this.clearInput();this.ui.toast('Departure cancelled.',false,true);}
-  save(){const ok=saveState(this.state);if(!ok&&!this.saveFailed)this.ui.toast('Automatic saving is unavailable in this browser. Export your save in Flight handbook to keep your voyage.',true);this.saveFailed=!ok;return ok;}
+  save(){const ok=this.saves.autosave(this.state);if(!ok&&!this.saveFailed)this.ui.toast('Automatic saving is unavailable in this browser. Export your save to keep your voyage.',true);this.saveFailed=!ok;if(ok)this.saved=this.state;return ok;}
   begin(fresh=false){
+    if(!fresh){
+      if(this.started&&this.mode==='menu'&&this.titleReturnMode){
+        this.audio.start();this.ui.closePanel();this.clearInput();this.setMode(this.titleReturnMode);this.titleReturnMode=null;
+        if(this.mode==='docked'){this.ui.tab='contracts';this.ui.openPanel('port');}return true;
+      }
+      return this.loadVoyage('auto');
+    }
+    const previous=this.started?this.state:this.saves.load('auto');
+    if(previous&&!this.saves.backup(previous)){this.ui.toast('Could not preserve your previous voyage. Export it before starting over; your current game is unchanged.',true);return false;}
+    this.restoreVoyage(freshState());this.ui.toast('Welcome aboard Cinder. Ada’s rescue job is waiting on the contract board.');return true;
+  }
+  restoreVoyage(state){
     this.audio.start();this.ui.closePanel();this.clearInput();
-    if(fresh){this.state=freshState();this.sim=new Flight(this.state,event=>this.event(event));this.view.setSystem(this.state.system);this.view.setShip(this.state.ship);this.saved=this.state;}
-    if(this.state.hull<=0)rescue(this.state);
-    this.started=true;this.state.shield=stats(this.state).shield;this.setMode('docked');this.ui.tab='contracts';this.ui.openPanel('port');this.save();
-    if(fresh)this.ui.toast('Welcome aboard Cinder. Ada has a medical delivery on the contract board.');
+    this.state=state;if(this.state.hull<=0)rescue(this.state);this.state.shield=stats(this.state).shield;
+    this.sim=new Flight(this.state,event=>this.event(event));this.view.setSystem(this.state.system);this.view.setShip(this.state.ship);
+    this.started=true;this.titleReturnMode=null;this.jumpDestination=null;this.jumpT=0;this.saveTimer=0;
+    this.ui.touchMissionId=null;this.ui.lastMission='';this.ui.lastRadio=null;this.ui.saveDecision=null;this.ui.tab='contracts';
+    this.setMode('docked');this.ui.openPanel('port');this.save();
+  }
+  loadVoyage(id){
+    const state=this.saves.load(id);if(!state){this.ui.toast('That save is empty or unreadable. Your current voyage is unchanged.',true);return false;}
+    const previous=this.started?this.state:this.saves.load('auto');
+    if(previous&&(id!=='auto'||this.started&&this.mode!=='menu')&&!this.saves.backup(previous)){this.ui.toast('Could not preserve the current voyage. Export it before loading another save.',true);return false;}
+    this.restoreVoyage(state);this.ui.toast('Voyage loaded · docked at '+systemById(state.system).port+'.');return true;
+  }
+  titleMenu(){
+    if(this.mode==='jump'||this.mode==='departure')return;
+    if(this.started)this.save();this.titleReturnMode=['flight','docked'].includes(this.mode)?this.mode:null;
+    this.ui.closePanel();this.clearInput();this.ui.el.radio.hidden=true;this.setMode('menu');this.ui.renderTitle();
+  }
+  openSaves(mode='load'){
+    if(this.mode==='dead')this.titleMenu();this.ui.saveMode=mode;this.ui.saveDecision=null;this.ui.openPanel('saves');
+  }
+  saveSlot(id){
+    if(!SAVE_SLOTS.includes(id)||!this.started||!['flight','docked'].includes(this.mode))return false;
+    const ok=this.saves.saveSlot(id,this.state);this.ui.saveDecision=null;
+    this.ui.toast(ok?'Voyage saved to slot '+id.slice(-1)+'.':'Could not write that slot. Export your voyage to keep a copy.',!ok);
+    this.ui.renderPanel(true);return ok;
   }
   launch(){
     if(this.mode!=='docked')return;
@@ -101,6 +135,27 @@ export class Game {
   action(action,button){
     if(action!=='sound')this.audio.event('click');const id=button?.dataset.id;
     if(action==='close-panel')this.ui.closePanel();
+    else if(action==='continue')this.begin(false);
+    else if(action==='title-menu')this.titleMenu();
+    else if(action==='save-game')this.openSaves('save');
+    else if(action==='load-game')this.openSaves('load');
+    else if(action==='save-tab'){this.ui.saveMode=button.dataset.tab==='save'?'save':'load';this.ui.saveDecision=null;this.ui.renderPanel();}
+    else if(action==='save-slot'){
+      if(!SAVE_SLOTS.includes(id)||!this.started||!['flight','docked'].includes(this.mode))return;
+      if(this.saves.read(id)){this.ui.saveDecision={kind:'overwrite',id};this.ui.renderPanel(true);}else this.saveSlot(id);
+    }
+    else if(action==='load-save'){
+      if(!this.saves.read(id)?.state)return;
+      if(this.started&&this.mode!=='menu'){this.ui.saveDecision={kind:'load',id};this.ui.renderPanel(true);}else this.loadVoyage(id);
+    }
+    else if(action==='delete-save'){if(SAVE_SLOTS.includes(id)&&this.saves.read(id)){this.ui.saveDecision={kind:'delete',id};this.ui.renderPanel(true);}}
+    else if(action==='cancel-save-decision'){this.ui.saveDecision=null;this.ui.renderPanel(true);}
+    else if(action==='confirm-save-decision'){
+      const decision=this.ui.saveDecision;if(!decision)return;this.ui.saveDecision=null;
+      if(decision.kind==='overwrite')this.saveSlot(decision.id);
+      else if(decision.kind==='load')this.loadVoyage(decision.id);
+      else if(decision.kind==='delete'){const ok=this.saves.remove(decision.id);this.ui.toast(ok?'Save slot cleared.':'Could not clear that save slot.',!ok);this.ui.renderPanel(true);}
+    }
     else if(action==='flight-menu')this.ui.openPanel('flight-menu');
     else if(action==='radio-message')this.ui.openPanel('radio-message');
     else if(action==='contacts')this.ui.openPanel('contacts');
@@ -156,7 +211,7 @@ export class Game {
     }else if(action==='dismiss-radio')this.ui.el.radio.hidden=true;
     else if(action==='export-save')this.exportSave();
     else if(action==='import-save')document.getElementById('saveInput').click();
-    else if(action==='new-game')this.ui.openPanel('reset');
+    else if(action==='new-game'){if(this.started||this.saves.load('auto'))this.ui.openPanel('reset');else this.begin(true);}
     else if(action==='confirm-new')this.begin(true);
     else if(action==='rescue'){
       const penalty=rescue(this.state);this.sim.buildWorld();this.sim.dead=false;this.sim.target=this.sim.station;this.setMode('docked');this.ui.tab='contracts';this.ui.openPanel('port');this.save();this.ui.toast(`Back in a berth · ${money(penalty)} cr tow bill. Contract freight recovered.`);
@@ -167,10 +222,15 @@ export class Game {
   }
   async importSave(file){
     if(!file)return;if(file.size>500000){this.ui.toast('That file is too large to be a voyage save.',true);return;}
-    try{const state=validateSave(JSON.parse(await file.text()));if(!state)throw new Error('invalid');this.ui.closePanel();this.state=state;this.saved=state;this.sim=new Flight(state,event=>this.event(event));this.view.setSystem(state.system);this.view.setShip(state.ship);this.begin(false);this.ui.toast('Voyage restored. Welcome back, Captain.');}catch{this.ui.toast('That file is not a valid Dust & Starlight save. Your current voyage is unchanged.',true);}
+    try{
+      const state=validateSave(JSON.parse(await file.text()));if(!state)throw new Error('invalid');
+      const previous=this.started?this.state:this.saves.load('auto');
+      if(previous&&!this.saves.backup(previous)){this.ui.toast('Could not preserve your current voyage. Export it before importing another save.',true);return;}
+      this.restoreVoyage(state);this.ui.toast('Voyage imported · docked at '+systemById(state.system).port+'.');
+    }catch{this.ui.toast('That file is not a valid Dust & Starlight save. Your current voyage is unchanged.',true);}
   }
   bindInputs(){
-    document.getElementById('continueBtn').addEventListener('click',()=>this.begin(false));document.getElementById('newBtn').addEventListener('click',()=>{if(this.saved)this.ui.openPanel('reset');else this.begin(true);});document.getElementById('menuHelp').addEventListener('click',()=>this.ui.openPanel('settings'));document.getElementById('panelClose').addEventListener('click',()=>this.ui.closePanel());
+    document.getElementById('menuHelp').addEventListener('click',()=>this.ui.openPanel('settings'));document.getElementById('panelClose').addEventListener('click',()=>this.ui.closePanel());
     document.getElementById('app').addEventListener('click',event=>{const button=event.target.closest('[data-action]');if(button&&!button.disabled)this.action(button.dataset.action,button);});
     document.getElementById('app').addEventListener('input',event=>{const channel=event.target.dataset.volume;if(channel){this.audio.setVolume(channel,Number(event.target.value)/100);const out=event.target.parentElement.querySelector('output');if(out)out.textContent=event.target.value+'%';}else if(event.target.dataset.sensitivity){this.preferences.sensitivity=clamp(Number(event.target.value)/100,.4,1.8);savePreferences(this.preferences);const out=event.target.parentElement.querySelector('output');if(out)out.textContent=this.preferences.sensitivity.toFixed(1)+'×';}});
     document.getElementById('app').addEventListener('change',event=>{if(event.target.id==='qualitySelect'){this.view.setQuality(event.target.value);this.ui.toast('Graphics quality updated.',false,true);}else if(event.target.id==='mouseMode'){this.preferences.mouseMode=event.target.value==='drag'?'drag':'cursor';savePreferences(this.preferences);}});
@@ -178,7 +238,7 @@ export class Game {
     document.getElementById('saveInput').addEventListener('change',event=>{this.importSave(event.target.files[0]);event.target.value='';});
     window.addEventListener('keydown',event=>{
       const key=event.code,focused=document.activeElement,typing=['SELECT','TEXTAREA'].includes(focused?.tagName)||focused?.tagName==='INPUT'&&!['range','button','checkbox'].includes(focused.type);
-      if(key==='Escape'){event.preventDefault();if(this.mode==='jump'||this.mode==='dead')return;if(this.mode==='departure'){this.cancelDeparture();return;}if(this.ui.panel)this.ui.closePanel();else if(this.mode==='docked')this.ui.openPanel('port');else this.ui.openPanel('settings');return;}
+      if(key==='Escape'){event.preventDefault();if(this.mode==='jump'||this.mode==='dead')return;if(this.mode==='departure'){this.cancelDeparture();return;}if(this.ui.panel)this.ui.closePanel();else if(this.mode!=='menu')this.ui.openPanel('flight-menu');return;}
       if(this.ui.panel){
         if(key==='Tab'){const buttons=[...this.ui.el.panelOverlay.querySelectorAll('button:not(:disabled):not([hidden]),select,input:not([hidden])')].filter(el=>el.offsetParent!==null);if(!buttons.length)return;const index=buttons.indexOf(document.activeElement),next=event.shiftKey?(index<=0?buttons.length-1:index-1):(index+1)%buttons.length;buttons[next].focus();event.preventDefault();}return;
       }
@@ -214,7 +274,7 @@ export class Game {
   gamepad(dt){
     const pads=navigator.getGamepads?.();const pad=pads&&Array.from(pads).find(Boolean);if(!pad)return {x:0,y:0,fire:false,boost:false};
     const deadzone=n=>steeringCurve(n,.15,this.preferences.sensitivity);const x=deadzone(pad.axes[0]||0),y=-deadzone(pad.axes[1]||0);
-    if(this.mode==='flight'&&!this.ui.panel){const throttle=deadzone(pad.axes[3]||0);if(throttle){this.sim.throttle=throttleChange(this.sim.throttle,throttle,dt);this.sim.autopilot=false;}for(const [index,action]of [[0,'target'],[1,'missile'],[3,'autopilot'],[9,'settings']]){if(pad.buttons[index]?.pressed&&!this.padPrevious[index])this.action(action);}this.padPrevious=pad.buttons.map(b=>b.pressed);}
+    if(this.mode==='flight'&&!this.ui.panel){const throttle=deadzone(pad.axes[3]||0);if(throttle){this.sim.throttle=throttleChange(this.sim.throttle,throttle,dt);this.sim.autopilot=false;}for(const [index,action]of [[0,'target'],[1,'missile'],[3,'autopilot'],[9,'flight-menu']]){if(pad.buttons[index]?.pressed&&!this.padPrevious[index])this.action(action);}this.padPrevious=pad.buttons.map(b=>b.pressed);}
     return {x,y,fire:!!pad.buttons[7]?.pressed,boost:!!pad.buttons[6]?.pressed,interact:!!pad.buttons[2]?.pressed,brake:!!pad.buttons[4]?.pressed,roll:(pad.buttons[5]?.pressed?1:0)};
   }
   input(dt){

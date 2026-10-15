@@ -24,7 +24,7 @@ test('real pointer handlers engage cursor steering, fire while held, and release
     h.game.sim.autopilot=true;down(pointer(500,300));assert.equal(h.game.pointer.active,true);assert.equal(h.game.pointer.fire,true);assert.equal(h.game.sim.autopilot,false);assert.equal(h.game.input(1/60).fire,true);
     move(pointer(800,100));assert.ok(h.game.pointer.x>.9);assert.ok(h.game.pointer.y>.9);
     canvas.events.get('pointerup')(pointer(800,100));assert.equal(h.game.pointer.fire,false);assert.equal(h.game.pointer.active,true);
-    h.windowEvents.get('keydown')(key('Escape'));assert.equal(h.game.ui.panel,'settings');assert.equal(h.game.pointer.active,false);assert.equal(h.game.input(1/60).fire,false);
+    h.windowEvents.get('keydown')(key('Escape'));assert.equal(h.game.ui.panel,'flight-menu');assert.equal(h.game.pointer.active,false);assert.equal(h.game.input(1/60).fire,false);
   }finally{h.restore();}
 });
 
@@ -40,7 +40,7 @@ test('real controller input changes thrust by elapsed time and pause discards he
   const h=harness();try{
     const buttons=Array.from({length:16},()=>({pressed:false})),pad={axes:[0,0,0,-.4],buttons};navigator.getGamepads=()=>[pad];
     const run=fps=>{h.game.sim.throttle=.15;h.game.padPrevious=[];for(let i=0;i<fps;i++)h.game.gamepad(1/fps);return h.game.sim.throttle;};assert.ok(Math.abs(run(30)-run(120))<1e-12);
-    buttons[7].pressed=true;buttons[9].pressed=true;h.game.padPrevious=[];const input=h.game.input(1/60);assert.equal(h.game.ui.panel,'settings');assert.equal(input.fire,false);
+    buttons[7].pressed=true;buttons[9].pressed=true;h.game.padPrevious=[];const input=h.game.input(1/60);assert.equal(h.game.ui.panel,'flight-menu');assert.equal(input.fire,false);
   }finally{h.restore();}
 });
 

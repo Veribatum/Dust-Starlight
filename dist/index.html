@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="./polish.css">
   <link rel="stylesheet" href="./encounters.css">
   <link rel="stylesheet" href="./touch.css">
+  <link rel="stylesheet" href="./voyages.css">
 </head>
 <body>
 <svg aria-hidden="true" class="svg-defs" xmlns="http://www.w3.org/2000/svg"><defs>
@@ -39,12 +40,13 @@
       <h1>DUST <em>&</em><br>STARLIGHT<span class="title-period">.</span></h1>
       <p class="menu-line">A ship. A crew.<br>A sky full of trouble.</p>
       <p class="menu-desc">Find work on the edge of civilization. Haul what pays, help who you can, and keep your ship flying.</p>
-      <div class="menu-buttons">
-        <button id="continueBtn" class="btn primary large" hidden><span>CONTINUE VOYAGE</span><svg><use href="#i-arrow"/></svg></button>
-        <button id="newBtn" class="btn primary large"><span>BEGIN YOUR VOYAGE</span><svg><use href="#i-arrow"/></svg></button>
-        <button id="menuHelp" class="text-btn">How to fly <span>↗</span></button>
-      </div>
       <div id="resumeInfo" class="resume-info" hidden></div>
+      <div class="menu-buttons">
+        <button id="continueBtn" class="btn primary large" data-action="continue" hidden><span>Continue</span><svg><use href="#i-arrow"/></svg></button>
+        <button id="newBtn" class="btn primary large" data-action="new-game"><span>New Game</span><svg><use href="#i-star"/></svg></button>
+        <button id="loadBtn" class="btn secondary large" data-action="load-game"><span>Load Game</span><svg><use href="#i-log"/></svg></button>
+      </div>
+      <div class="menu-utilities"><button id="menuHelp" class="text-btn">Controls & audio <span>↗</span></button><span>Saves stay on this browser</span></div>
     </div>
     <div class="menu-bottom"><span>THE OUTER REACH · 6 SYSTEMS · YOUR RULES</span><span>INDEPENDENT FLIGHT / 01</span></div>
     <div class="menu-stamp"><span>REGISTERED FREIGHTER</span><strong>CINDER</strong><small>RUSTWREN CLASS · BERTH 04</small></div>
@@ -54,6 +56,7 @@
     <header class="topbar">
       <div class="brand"><svg><use href="#i-star"/></svg><span>DUST <em>&</em> STARLIGHT</span></div>
       <nav class="topnav" aria-label="Game menus">
+        <button class="nav-btn icon-only" data-action="flight-menu" title="Captain’s menu (Esc)" aria-label="Open captain’s menu"><svg><use href="#i-star"/></svg></button>
         <button class="nav-btn" data-action="map" title="Star chart (G)"><svg><use href="#i-map"/></svg><span>Star chart</span><kbd>G</kbd></button>
         <button class="nav-btn" data-action="crew" title="Crew (C)"><svg><use href="#i-crew"/></svg><span>Crew</span><kbd>C</kbd></button>
         <button class="nav-btn" data-action="journal" title="Captain’s log (L)"><svg><use href="#i-log"/></svg><span>Log</span></button>

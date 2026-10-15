@@ -28,6 +28,12 @@ The current hosted game is at https://dust-and-starlight.palerain16.chatgpt.site
 
 ## Controls
 
+The title screen always offers **New Game** and **Load Game**, with **Continue** when a voyage is available. New Game preserves the current voyage under **Previous voyage** before restarting the opening chapter. Three independent manual slots keep earlier chapters available for testing.
+
+Open the captain's menu with **Escape** on desktop, the menu button on a phone, or Start during gamepad flight. Choose **Save Game** to write a slot, **Load Game** to browse autosave/manual slots/Previous voyage, or **Main Menu** to return to the title. Existing slots require confirmation before overwrite or deletion. Loading during play asks before replacing the active voyage and keeps it as Previous voyage.
+
+Loaded saves restore the ship, cargo, crew, and contract progress at the saved system's port. In-progress escort routes, damage to protected NPCs, and exact flight positions are rebuilt rather than restored; the UI describes this as a port checkpoint. Continue after returning to the title in the same session resumes the existing flight. The original version-1 autosave and JSON exports remain compatible. Saves stay in the current browser/origin; use Export/Import from Load Game when changing devices or moving between local and hosted copies.
+
 Click the flight view to engage cursor steering; center the cursor to fly straight. Left-click or Space fires. T releases mouse flight. WASD or arrows also steer. R/F or mouse wheel adjusts thrust. B brakes; hold Q to scan or transfer. Ship preferences include sensitivity, cursor/drag steering, pitch inversion, and roll-leveling assistance. Shift boosts; M fires a missile; Tab targets; V engages autopilot; E docks; G opens the chart; C opens crew; L opens the log; Z/X rolls; Escape pauses. Touch joystick, thrust slider, and action buttons support mobile play. Gamepad controls are described in-game.
 
 ## Validation
