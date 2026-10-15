@@ -119,7 +119,7 @@ test('all ship classes keep valid geometry after the mobile draw-call optimizati
 test('six larger station designs and four commercial hulls have finite renderable geometry',()=>{
   const previous=globalThis.document;globalThis.document={createElement(){return {getContext(){return {fillRect(){},strokeRect(){},fillText(){}};}};}};
   try{
-    const spans=[];for(const system of W.SYSTEMS){const model=makeStation(system),bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3());spans.push(size.toArray().map(v=>Math.round(v)).join(','));assert.ok(Math.max(size.x,size.y,size.z)>700);assert.equal(model.userData.design,W.PORTS[system.id].design);model.traverse(obj=>{if(obj.isMesh)assert.ok(Array.from(obj.geometry.getAttribute('position').array).every(Number.isFinite));});}assert.equal(new Set(spans).size,6);
+    const spans=[];for(const system of W.SYSTEMS){const model=makeStation(system),bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3());spans.push(size.toArray().map(v=>Math.round(v)).join(','));assert.ok(Math.max(size.x,size.y,size.z)>700);assert.equal(model.userData.design,W.PORTS[system.id].design);model.traverse(obj=>{if(obj.isMesh)assert.ok(Array.from(obj.geometry.getAttribute('position').array).every(Number.isFinite));});}assert.equal(new Set(spans).size,W.SYSTEMS.length);
     for(const kind of ['bulk','tanker','liner','shuttle']){const model=makeCommercialShip(kind),size=new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3());assert.ok(size.z>(kind==='shuttle'?25:140));assert.equal(model.userData.engines.length,2);}
   }finally{if(previous===undefined)delete globalThis.document;else globalThis.document=previous;}
 });

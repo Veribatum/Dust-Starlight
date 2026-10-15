@@ -45,10 +45,12 @@ export function touchObjective(sim,mission,cue,mode){
   if(mission.dest!==sim.state.system)return {title:mission.title,hint:'Jump to '+systemById(mission.dest).name,percent:0};
   if(mission.failed)return {title:mission.title,hint:'Transport lost · retry available',percent:0};
   const session=sim.encounters?.sessions.get(mission.id),object=sim.encounters?.target(mission),d=object?sim.distance(object):sim.distance(sim.target),range=d>=1000?(d/1000).toFixed(1)+' km':Math.round(d)+' m';
-  const title={rescue:'Rescue · '+(object?.name.split('·').pop().trim()||'transport'),escort:'Escort convoy',survey:'Scan convoy recorders',infiltrate:'Covert handoff',defense:'Protect the relief carrier'}[mission.type]||mission.title;
+  const title={rescue:'Rescue · '+(object?.name.split('·').pop().trim()||'transport'),escort:'Escort convoy',survey:'Scan convoy recorders',infiltrate:'Covert handoff',defense:'Protect the relief carrier',repair:'Restore relay power',intercept:'Intercept the courier'}[mission.type]||mission.title;
   let hint=cue?.canInteract?'Hold '+cue.action.toLowerCase():range+' · approach';
   if(mission.type==='escort'&&session)hint=Math.round(session.routeProgress*100)+'% route · hull '+Math.ceil(session.ship.hp/session.ship.maxHp*100)+'%';
   else if(mission.type==='defense'&&session)hint=mission.progress+'/'+mission.count+' raiders · carrier '+Math.ceil(session.ship.hp/session.ship.maxHp*100)+'%';
+  else if(mission.type==='repair')hint=mission.progress+'/'+mission.count+' restored · '+(cue?.canInteract?'hold repair':range);
+  else if(mission.type==='intercept'&&session)hint=session.active?Math.ceil(session.remaining)+'s to jump · '+range:'Approach courier · '+range;
   else if(mission.type==='survey')hint=mission.progress+'/'+mission.count+' scanned · '+(cue?.canInteract?'hold scan':range);
   else if(mission.type==='infiltrate')hint=mission.progress+'/3 · '+(cue?.canInteract?'hold transfer':range);
   else if(mission.type==='courier')hint='Deliver at '+systemById(mission.dest).port;

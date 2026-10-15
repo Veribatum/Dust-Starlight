@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="./encounters.css">
   <link rel="stylesheet" href="./touch.css">
   <link rel="stylesheet" href="./voyages.css">
+  <link rel="stylesheet" href="./life.css">
 </head>
 <body>
 <svg aria-hidden="true" class="svg-defs" xmlns="http://www.w3.org/2000/svg"><defs>
@@ -46,12 +47,15 @@
         <button id="newBtn" class="btn primary large" data-action="new-game"><span>New Game</span><svg><use href="#i-star"/></svg></button>
         <button id="loadBtn" class="btn secondary large" data-action="load-game"><span>Load Game</span><svg><use href="#i-log"/></svg></button>
       </div>
-      <div class="menu-utilities"><button id="menuHelp" class="text-btn">Controls & audio <span>↗</span></button><span>Saves stay on this browser</span></div>
+      <div class="menu-utilities"><button id="menuHelp" class="text-btn">Controls & audio <span>↗</span></button><button class="text-btn" data-action="replay-intro">Opening scene ↗</button><span>Saves stay on this browser</span></div>
     </div>
-    <div class="menu-bottom"><span>THE OUTER REACH · 6 SYSTEMS · YOUR RULES</span><span>INDEPENDENT FLIGHT / 01</span></div>
+    <div class="menu-bottom"><span>THE OUTER REACH · 9 SYSTEMS · YOUR RULES</span><span>INDEPENDENT FLIGHT / 01</span></div>
     <div class="menu-stamp"><span>REGISTERED FREIGHTER</span><strong>CINDER</strong><small>RUSTWREN CLASS · BERTH 04</small></div>
   </section>
 
+  <section id="intro" class="cinematic" aria-label="Opening story" hidden>
+    <div class="cinematic-top"><span id="introLabel"></span><button class="btn ghost" data-action="intro-skip">Skip to briefing</button></div><div class="cinematic-chapter"><span id="introShot"></span><h2 id="introTitle"></h2></div><div class="cinematic-caption"><span id="introSpeaker"></span><p id="introCaption" aria-live="polite"></p><button id="introNext" class="btn secondary" data-action="intro-next">Next →</button></div><div class="cinematic-progress"><i id="introProgress"></i></div>
+  </section><div class="hangar-view-label" aria-hidden="true"><span>BERTH 04 / YOUR SHIP</span><strong>HOME, FOR NOW.</strong><small>THE REACH CAN WAIT A MOMENT.</small></div>
   <section id="hud" aria-label="Flight instruments" hidden>
     <header class="topbar">
       <div class="brand"><svg><use href="#i-star"/></svg><span>DUST <em>&</em> STARLIGHT</span></div>

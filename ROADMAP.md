@@ -1,25 +1,13 @@
-# Development priorities
+# Next work
 
-The imported baseline is the playable October 14, 2026 version of Dust & Starlight, including the mobile cockpit and the fix that keeps completed ships and wrecks visible. Its Sites source commit is `31f93b793b70fc9a205f0bb15612bf398032f8f7`.
+Production deploys from GitHub main through Pages at the repository root. The baseline-2026-10-14 branch preserves the original playable import.
 
-New Game, Continue, Load Game, three manual slots, Previous voyage backup, and main-menu return are implemented after the baseline. Loaded slots are port checkpoints; the original autosave format remains supported. See [ASSESSMENT.md](ASSESSMENT.md) for the current source-based assessment and the proposed next playable milestone.
+Implemented: New/Continue/Load and manual slots; cinematic opening and chapter briefings; visible hangar and station activities; nine crew with working berths, trust and conversations; nine systems; relay repairs and timed interceptions; local choices; registry pursuit/settlement and faction pay; large capital traffic; repaired hulls with topology checks. Original version-one saves and accepted legacy contracts remain supported.
 
-## Flight and combat
+1. Play the opening, repair and interception on actual phone/desktop hardware; measure frame time and tune controls/camera.
+2. Add distinct raider roles and stronger weapon feedback.
+3. Add callbacks to local choices and crew reactions to outcomes.
+4. Add an optional distress encounter found outside the contract board.
+5. Persist exact encounter positions, NPC damage and timers before lengthening missions.
 
-Refine steering response and camera motion on desktop and phones. Improve weapon impacts, target feedback, and enemy tactics. Keep keyboard, mouse, gamepad, and independent touch controls working together.
-
-## A living universe
-
-Give commercial traffic more convincing routes, departure behavior, radio exchanges, and faction encounters. Make systems rewarding to explore between contracts.
-
-## Missions
-
-Expand the existing rescue, escort, survey, covert handoff, and carrier defense jobs with optional objectives, complications, and choices that affect reputation. Preserve accepted contracts and existing saves.
-
-## Progression
-
-Make ship upgrades and crew abilities visibly change how the ship performs. Build on the six existing hulls and imported ship assets.
-
-## Validation
-
-Keep the existing gameplay, input, layout, and model tests passing. Actual browser and iPhone playtesting is still needed for control feel, visual polish, and performance; the automated checks do not establish those qualities.
+Keep the Pages entry, public repository and existing saves intact. Compare new GLB reductions against their original geometry and UVs rather than meeting a triangle target at any cost.

@@ -41,6 +41,14 @@ export function makeStation(sys){
     for(const y of [-80,155,365]){ring(g,y===155?430:315,18,steel,[0,y,-95],[Math.PI/2,0,0]);ring(g,y===155?430:315,2,light,[0,y+17,-95],[Math.PI/2,0,0]);box(g,[810,12,23],dark,[0,y,-95]);box(g,[24,12,810],dark,[0,y,-95]);}
     const random=rng(900);for(let i=0;i<14;i++){const a=i/14*Math.PI*2,r=270+random()*130,h=150+random()*330;const x=Math.cos(a)*r,z=Math.sin(a)*r-95;box(g,[32,h,45],steel,[x,155+h/2,z]);box(g,[34,4,47],light,[x,155+h,z]);for(let j=0;j<7;j++)box(g,[17,3,2],light,[x,175+j*(h/8),z+24]);}
     box(g,[75,200,90],trim,[0,570,-95]);tube(g,5,190,light,[0,765,-95],[0,0,0]);
+  }else if(sys.id==='meridian'){
+    for(const side of [-1,1]){box(g,[75,950,140],steel,[side*570,70,-120]);box(g,[120,50,190],trim,[side*570,550,-120]);box(g,[1100,40,45],dark,[0,side*400,-150]);panels(side*720,80,-200,160);for(let i=0;i<14;i++)box(g,[45,5,3],light,[side*570,-320+i*60,-48]);}
+    for(const y of [-360,360]){box(g,[1040,20,90],steel,[0,y,-120]);for(let i=0;i<16;i++)box(g,[30,4,4],light,[-470+i*62,y+12,-73]);}box(g,[150,190,120],trim,[0,-30,-170]);windows([-65,-80,-108],11,10,12);
+  }else if(sys.id==='saffron'){
+    tube(g,95,650,dark,[0,0,-110],[0,0,0]);for(const y of [-200,100,350]){ring(g,470,23,steel,[0,y,-110],[Math.PI/2,0,0]);ring(g,465,2,light,[0,y+20,-110],[Math.PI/2,0,0]);for(let i=0;i<8;i++){const a=i*Math.PI/4;box(g,[100,70,75],rust,[Math.cos(a)*470,y,Math.sin(a)*470-110],[0,-a,0]);}}
+    for(const side of [-1,1]){panels(side*580,-300,-140,230);box(g,[1100,15,30],steel,[0,-300,-140]);tube(g,36,240,trim,[side*180,300,-100],[0,0,0]);}windows([-70,-90,-12],12,5,12);
+  }else if(sys.id==='vesper'){
+    tube(g,58,550,steel,[0,0,-100],[0,0,0]);for(let i=0;i<6;i++){const a=i*Math.PI/3,x=Math.cos(a)*430,y=Math.sin(a)*430;box(g,[9,400,12],dark,[x*.53,y*.53,-105],[0,0,a-Math.PI/2]);mesh(g,new T.ConeGeometry(125,50,24,1,true),new T.MeshStandardMaterial({color:'#7c829e',side:T.DoubleSide,metalness:.6,roughness:.4}),[x,y,-85],[Math.PI/2,0,a]);ring(g,128,3,trim,[x,y,-62]);tube(g,3,100,light,[x,y,-30]);}ring(g,170,9,steel,[0,0,-110]);box(g,[100,150,90],dark,[0,-20,-45]);windows([-36,-75,1],7,8,12);panels(0,-590,-130,180);
   }else{
     const random=rng(hash('deadlight-station'));mesh(g,new T.IcosahedronGeometry(170,2),metal('#645d57'),[0,0,-60],[.2,.1,.4],[1.3,.9,.8]);
     for(let i=0;i<30;i++){const a=random()*Math.PI*2,r=180+random()*140,x=Math.cos(a)*r,y=Math.sin(a)*r,z=-30-random()*100;box(g,[30+random()*55,35+random()*75,50+random()*120],i%3?rust:steel,[x,y,z],[random()*.4,random()*.5,a]);box(g,[4,100,9],dark,[x*.58,y*.58,z],[0,0,a-Math.PI/2]);box(g,[13,6,4],i%2?light:white,[x,y,z+75],[0,0,a]);}

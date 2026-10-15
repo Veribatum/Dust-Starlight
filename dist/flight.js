@@ -1,5 +1,5 @@
 import * as THREE from './vendor/three.module.js';
-import {stats, rng, hash, clamp, systemById, freeHold, progress, addLog, fine, hasIllegal, PORTS} from './world.js';
+import {stats, rng, hash, clamp, systemById, freeHold, progress, addLog, fine, hasIllegal, PORTS, onDuty, bondTier, addHeat} from './world.js';
 import {Encounters} from './encounters.js';
 
 export function segmentDistanceSquared(point,start,end) {
@@ -28,6 +28,7 @@ export class Flight {
     const count=Math.max(sys.danger>.6?4:sys.danger>.3?3:2,hunt?.count||0);
     for(let i=0;i<count;i++)this.spawnPirate(random,i);
     if(sys.security>=2){this.entities.push({id:'patrol-'+uid++,kind:'patrol',name:'Directorate patrol',pos:vector(-280,70,this.station.pos.z+560),vel:vector(),quat:new THREE.Quaternion(),radius:9,hp:155,maxHp:155,cooldown:2,phase:random()*6,dead:false});}
+    if(sys.security>=2&&this.state.heat>=3)for(let i=0;i<Math.min(2,Math.floor(this.state.heat)-2);i++)this.entities.push({id:'patrol-'+uid++,kind:'patrol',name:'Directorate interdiction wing',assetId:'crimson-vanguard',length:28,pos:vector(650+i*260,160,this.station.pos.z+1400),vel:vector(),quat:new THREE.Quaternion(),radius:12,hp:190,maxHp:190,cooldown:2,phase:i*2,dead:false});
     const callsigns=['Old Promise','Resolute','Golden Road','Long Winter','Blue Meridian','Far Country','Estuary','Pioneer','Brass Lantern','Good Fortune','Wayward Son','Daybreak','Northbound','Saltwater','Hearthfire','Whisper','Dust Runner','Paladin','Slow Sunday','Windward'];
     const fleet=['bulk','shuttle','tanker','shuttle','liner','bulk','shuttle','tanker'];
     for(let i=0;i<PORTS[sys.id].traffic;i++){
@@ -37,7 +38,9 @@ export class Flight {
       const route={start,dock,exit,inbound:heavy?42:24,hold:heavy?16:7,outbound:heavy?52:28,cooldown:18};
       const commercial={bulk:['five-engine-hauler','frontier-transport'],shuttle:['vortex-z3','scout'],tanker:['leviathan','azure-voyager'],liner:['spirit-of-fire','mothership','spire-cruiser']};
       const models=commercial[classId];
-      this.entities.push({id:'trader-'+uid++,kind:'trader',classId,assetId:models[(i+SYSTEM_INDEX(sys.id))%models.length],length:heavy?(classId==='liner'?300:220):32,name:callsigns[i],operator:['Mercy Freight Co.','Reedwater Commercial','Outer Reach Logistics','Independent Transport'][i%4],pos:vector(),vel:vector(),quat:new THREE.Quaternion(),radius:heavy?65:12,route,age:random()*(route.inbound+route.hold+route.outbound+route.cooldown),phase:'Inbound',dead:false});
+      const assetId=models[(i+SYSTEM_INDEX(sys.id))%models.length],length=({leviathan:780,mothership:980,'spirit-of-fire':650,'spire-cruiser':520,'five-engine-hauler':220,'frontier-transport':180,'azure-voyager':300,'vortex-z3':28,scout:30})[assetId],capital=length>=500;
+      if(capital){const berth=Math.max(PORTS[sys.id].span*.75+length*.6,1300)+lane*240;route.dock.set(side*berth,150+lane*150,900+lane*180);route.start.set(side*(berth+1400),650,4600+lane*420);route.exit.set(side*(berth+1800),-180,4100+lane*450);route.inbound=110;route.hold=30;route.outbound=125;}
+      this.entities.push({id:'trader-'+uid++,kind:'trader',classId,assetId,length,capital,name:callsigns[i],operator:['Mercy Freight Co.','Reedwater Commercial','Outer Reach Logistics','Independent Transport'][i%4],pos:vector(),vel:vector(),quat:new THREE.Quaternion(),radius:length*.56,route,age:random()*(route.inbound+route.hold+route.outbound+route.cooldown),phase:'Inbound',dead:false});
     }
     this.tickTraffic(0);
     this.dead=false;this.scan=0;this.scanActive=false;this.departure=false;this.encounters=new Encounters(this);
@@ -110,7 +113,7 @@ export class Flight {
       this.emit({type:'notice',text:`Raider destroyed · +${bounty} cr`,short:true});
       this.entities.push({id:'loot-'+uid++,kind:'cache',name:'Raider salvage',pos:e.pos.clone(),radius:7,dead:false,goods:'parts',quantity:2});
     }else if(e.kind==='ore')this.entities.push({id:'oreloot-'+uid++,kind:'cache',name:'Titanium fragments',pos:e.pos.clone(),radius:7,dead:false,goods:'ore',quantity:3,ore:true});
-    else if(e.kind==='patrol'){this.state.heat=clamp(this.state.heat+2,0,5);this.emit({type:'notice',text:'Patrol destroyed. Directorate heat increased.'});}
+    else if(e.kind==='patrol'){addHeat(this.state,2,'Destroyed a Directorate patrol vessel. Armed interdiction authorized.');this.emit({type:'notice',text:'Patrol destroyed. Directorate heat increased.'});}
     if(this.target===e){this.autopilot=false;this.target=e.kind==='ore'?this.entities[this.entities.length-1]:this.nearest('pirate')||this.station;}
     this.encounters.destroyed(e);
   }
@@ -130,9 +133,10 @@ export class Flight {
     this.tickTraffic(dt);this.arrivalGrace=Math.max(0,this.arrivalGrace-dt);const spec=stats(this.state);this.energy=Math.min(100,this.energy+dt*22);
     if(!input.boost||this.energy>35)this.boostLocked=false;if(this.energy<9)this.boostLocked=true;
     this.boosting=!!input.boost&&!this.boostLocked&&this.energy>8&&this.state.fuel>0&&!input.brake;
-    if(this.boosting){this.energy=Math.max(0,this.energy-dt*42);this.state.fuel=Math.max(0,this.state.fuel-dt*.12);}
+    if(this.boosting){this.energy=Math.max(0,this.energy-dt*42);this.state.fuel=Math.max(0,this.state.fuel-dt*.12*(onDuty(this.state,'boone')?.8:1));}
     if(this.lastHit>6)this.state.shield=Math.min(spec.shield,this.state.shield+dt*10);
-    if(this.lastHit>12&&this.state.crew.includes('len'))this.state.hull=Math.min(spec.hull,this.state.hull+dt*.65);
+    if(this.lastHit>12&&onDuty(this.state,'len'))this.state.hull=Math.min(spec.hull,this.state.hull+dt*(.65+bondTier(this.state,'len')*.15));
+    if(systemById(this.state.system).security===0&&this.state.heat>0&&!hasIllegal(this.state)){this.state.law??={reason:'Registry flagged',inspections:0,cooling:0};this.state.law.cooling+=dt;if(this.state.law.cooling>=180){this.state.heat=Math.max(0,this.state.heat-.5);this.state.law.cooling=0;this.state.law.reason='Search intensity eased after time outside controlled space.';}}
     if(this.target?.dead){this.target=this.station;this.autopilot=false;}
     if(this.autopilot&&(Math.abs(input.x)>.22||Math.abs(input.y)>.22||Math.abs(input.roll)>.2||input.brake)){this.autopilot=false;this.emit({type:'notice',text:'Manual flight control.'});}
     if(input.brake)this.throttle=0;
@@ -159,13 +163,13 @@ export class Flight {
         const victim=e.attackTarget&&!e.attackTarget.dead?e.attackTarget:null,victimPos=victim?victim.pos:this.pos,victimVel=victim?victim.vel:this.vel;
         const hostile=e.kind==='pirate'||this.state.heat>=3,distance=e.pos.distanceTo(victimPos),safe=victimPos.distanceTo(this.station.pos)<340;
         let goal;
-        if(hostile&&!safe&&distance<2200){
+        if(e.escapeTarget){goal=e.escapeTarget;}else if(hostile&&!safe&&distance<2200){
           const orbit=vector(Math.sin(this.time*.65+e.phase)*160,Math.sin(this.time*.38+e.phase)*70,Math.cos(this.time*.65+e.phase)*160);goal=victimPos.clone().add(orbit);
         }else if(e.patrolCenter){goal=e.patrolCenter.clone().add(vector(Math.sin(this.time*.18)*260,Math.cos(this.time*.13)*90,Math.cos(this.time*.18)*200));}
         else{goal=vector(Math.sin(this.time*.04+e.phase)*1100,Math.sin(this.time*.03+e.phase)*150,-1200+Math.cos(this.time*.04+e.phase)*250);}
         const turn=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(e.pos,goal,vector(0,1,0)));e.quat.slerp(turn,1-Math.exp(-dt*.95));
-        const speed=hostile&&!safe?(distance>330?80:45):33;e.vel.copy(vector(0,0,-1).applyQuaternion(e.quat)).multiplyScalar(speed);e.pos.addScaledVector(e.vel,dt);e.cooldown-=dt;
-        if(hostile&&!safe&&distance<850&&e.cooldown<=0&&(victim||this.arrivalGrace<=0)){
+        const speed=e.escapeTarget?82:hostile&&!safe?(distance>330?80:45):33;e.vel.copy(vector(0,0,-1).applyQuaternion(e.quat)).multiplyScalar(speed);e.pos.addScaledVector(e.vel,dt);e.cooldown-=dt;
+        if(!e.escapeTarget&&hostile&&!safe&&distance<850&&e.cooldown<=0&&(victim||this.arrivalGrace<=0)){
           const aim=victimPos.clone().addScaledVector(victimVel,distance/420*.65).sub(e.pos).normalize();
           if(aim.dot(vector(0,0,-1).applyQuaternion(e.quat))>.75){this.bullets.push({id:'shot-'+uid++,owner:e.id,victim,pos:e.pos.clone(),prev:e.pos.clone(),vel:aim.multiplyScalar(420),life:3,damage:9+systemById(this.state.system).danger*5,dead:false});e.cooldown=1.1+Math.random()*.6;}
         }
@@ -182,7 +186,7 @@ export class Flight {
       if(b.missile&&b.target&&!b.target.dead){const direction=b.target.pos.clone().sub(b.pos).normalize(),current=b.vel.clone().normalize();current.lerp(direction,Math.min(1,dt*5)).normalize();b.vel.copy(current).multiplyScalar(300);}
       b.pos.addScaledVector(b.vel,dt);
       if(b.owner==='player'){
-        for(const e of this.entities){if(e.dead||!['pirate','patrol','ore'].includes(e.kind))continue;if(segmentDistanceSquared(e.pos,b.prev,b.pos)<(e.radius+1.2)**2){e.hp-=b.damage;b.dead=true;this.hitTimer=.18;this.emit({type:'impact',pos:b.pos.clone(),ore:e.kind==='ore'});if(e.hp<=0)this.destroy(e);break;}}
+        for(const e of this.entities){if(e.dead||!['pirate','patrol','ore'].includes(e.kind))continue;if(segmentDistanceSquared(e.pos,b.prev,b.pos)<(e.radius+1.2)**2){e.hp-=b.damage;if(e.kind==='patrol'&&!e.attacked){e.attacked=true;addHeat(this.state,1,'Weapons fire on a Directorate patrol recorded.');}b.dead=true;this.hitTimer=.18;this.emit({type:'impact',pos:b.pos.clone(),ore:e.kind==='ore'});if(e.hp<=0)this.destroy(e);break;}}
       }else if(b.victim&&!b.victim.dead&&segmentDistanceSquared(b.victim.pos,b.prev,b.pos)<(b.victim.radius+3)**2){b.dead=true;b.victim.hp=Math.max(0,b.victim.hp-b.damage);this.emit({type:'impact',pos:b.pos.clone()});}
       else if(segmentDistanceSquared(this.pos,b.prev,b.pos)<6**2){b.dead=true;this.damage(b.damage);}
       if(b.life<=0)b.dead=true;
@@ -197,13 +201,13 @@ export class Flight {
   }
   updateScan(dt){
     const patrol=this.nearest('patrol');
-    if(!patrol||(!hasIllegal(this.state)&&this.state.heat<1)){this.scan=0;this.scanActive=false;return;}
+    if(!patrol||(!hasIllegal(this.state)&&this.state.heat<=0)){this.scan=0;this.scanActive=false;return;}
     const distance=this.distance(patrol);
     if(distance<560){
-      if(!this.scanActive){this.scanActive=true;this.scan=9;this.emit({type:'radio',who:'Directorate patrol',text:'Unregistered freighter, hold position for a cargo scan. Boost out of range if you want to keep your secrets.'});}
+      if(!this.scanActive){this.scanActive=true;this.scan=9+(onDuty(this.state,'rook')?4:0);this.emit({type:'radio',who:'Directorate patrol',text:'Unregistered freighter, hold position for a cargo scan. Boost out of range if you want to keep your secrets.'});}
       this.scan-=dt;
       if(this.scan<=0){const result=fine(this.state);addLog(this.state,`Patrol scan: ${result.amount} cr fine. Unlicensed cargo seized.`,'event');this.emit({type:'notice',text:`Scan complete · ${result.amount} cr fine. Unlicensed cargo seized.${result.failed.length?' Confiscated contracts can be accepted again at a port.':''}`});this.scanActive=false;this.scan=0;}
-    }else if(distance>760&&this.scanActive){this.scanActive=false;this.scan=0;this.emit({type:'notice',text:'Patrol scan evaded. Keep flying.'});}
+    }else if(distance>760&&this.scanActive){this.scanActive=false;this.scan=0;addHeat(this.state,.4,'Refused a Directorate cargo scan; transponder under scrutiny.');this.emit({type:'notice',text:'Patrol scan evaded · registry scrutiny increased.'});}
   }
 }
-function SYSTEM_INDEX(id){return ['juniper','bellwether','cinder','hush','crown','deadlight'].indexOf(id);}
+function SYSTEM_INDEX(id){return ['juniper','bellwether','cinder','hush','crown','deadlight','meridian','saffron','vesper'].indexOf(id);}

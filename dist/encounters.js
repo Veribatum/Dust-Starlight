@@ -1,3 +1,4 @@
+import {BRIEFINGS} from './life.js';
 import * as T from './vendor/three.module.js';
 import {SPACE_JOBS,deliver,addLog,money,clamp,rng,hash} from './world.js';
 
@@ -18,15 +19,19 @@ export class Encounters {
   }
   create(m){
     const s={m,objects:[],enemies:[],active:false,transfer:0,routeProgress:0,announced:false};
-    this.sessions.set(m.id,s);const offset=this.sessions.size*180;
-    if(m.type==='rescue'){
+    this.sessions.set(m.id,s);const offset=this.sessions.size*180+(m.story?0:(m.variant||0)*240);
+    if(m.type==='repair'){
+      s.nodes=[V(-1400-offset,70,2100),V(-1880-offset,160,2500),V(-1620-offset,-50,2940)].map((pos,i)=>this.entity(s,{kind:'relay',name:['Relay power coupling A','Relay power coupling B','Emergency relay core'][i],pos,scanned:i<m.progress,interactionComplete:i<m.progress,objective:i>=m.progress,phase:i<m.progress?'Power restored':'Offline'}));s.duration=5;
+    }else if(m.type==='intercept'){
+      const courier=this.sim.spawnPirate(rng(hash(m.id)),0);Object.assign(courier,{name:'Raider courier · Cutwire',assetId:'crimson-vanguard',length:36,hp:180,maxHp:180,missionId:m.id,objective:true,encounterDormant:true,phase:'Drive charging'});courier.pos.set(1300+offset,130,2300);s.ship=courier;s.objects.push(courier);s.enemies.push(courier);s.remaining=90;s.end=courier.pos.clone().add(V(2400,0,6500));
+    }else if(m.type==='rescue'){
       s.ship=this.entity(s,{kind:'civilian',name:'Clinic transport · Mayflower',assetId:'frontier-transport',length:90,pos:V(-1100-offset,140,2050),hp:420,maxHp:420,phase:'Distress signal'});
       this.ambush(s,1);s.duration=5;
     }else if(m.type==='escort'){
       s.ship=this.entity(s,{kind:'civilian',name:m.story&&m.id==='story-5'?'Relief convoy · Good Fortune':'Scrubber freight · Old Promise',assetId:m.id==='story-5'?'spirit-of-fire':'five-engine-hauler',length:150,pos:V(-1550-offset,180,2450),hp:680,maxHp:680,phase:'Waiting for escort'});
       s.start=s.ship.pos.clone();s.end=V(-500-offset,270,4100);s.routeLength=s.start.distanceTo(s.end);this.ambush(s,2);
     }else if(m.type==='defense'){
-      s.ship=this.entity(s,{kind:'civilian',name:'Relief carrier · Icebound',assetId:'icebound-carrier',length:340,pos:V(-1250-offset,80,-2150),hp:950,maxHp:950,phase:'Blockade'});
+      s.ship=this.entity(s,{kind:'civilian',name:'Relief carrier · Icebound',assetId:'icebound-carrier',length:780,radius:170,pos:V(-1250-offset,80,-2150),hp:950,maxHp:950,phase:'Blockade'});
       this.ambush(s,Math.max(0,m.count-m.progress));
     }else if(m.type==='survey'){
       const locations=[V(-1700-offset,180,-1900),V(-2450-offset,-90,-2350),V(-2200-offset,260,-3200)];
@@ -38,6 +43,8 @@ export class Encounters {
       s.nodes=locations.map((pos,i)=>this.entity(s,{kind:i===2?'civilian':'beacon',name:['Shadow lane · beacon 01','False manifest · beacon 02','Journalist shuttle · Saltwater'][i],assetId:i===2?'vortex-z3':null,length:22,pos,hidden:i!==m.progress,phase:i===2?'Awaiting evidence':'Navigation waypoint'}));s.duration=4;
       const patrol=this.sim.nearest('patrol');if(patrol){patrol.pos.set(1760+offset,120,750);patrol.patrolCenter=patrol.pos.clone();}
     }
+    if(!m.story&&m.type==='escort'){s.ship.name=['Freight tender · Sundown','Colony ferry · Hearthfire','Fuel barge · Amber Road'][m.variant||0];s.end.x+=(m.variant||0)*420;s.routeLength=s.start.distanceTo(s.end);}
+    if(!m.story&&m.type==='rescue')s.ship.name=['Clinic launch · Second Chance','Refinery tender · Night Watch','Passenger shuttle · Little Bird'][m.variant||0];
     return s;
   }
   ambush(s,count){
@@ -56,7 +63,7 @@ export class Encounters {
     object.hidden=object.kind==='beacon'&&!object.assetId;
   }
   release(s){
-    const phase={rescue:'Supplies received',escort:'Escort complete',survey:'Recorder decoded',infiltrate:'Evidence received',defense:'Carrier secure'}[s.m.type];
+    const phase={rescue:'Supplies received',escort:'Escort complete',survey:'Recorder decoded',infiltrate:'Evidence received',defense:'Carrier secure',repair:'Power restored',intercept:'Courier stopped'}[s.m.type];
     for(const object of s.objects){
       delete object.missionId;
       if(object.dead)continue;
@@ -75,7 +82,7 @@ export class Encounters {
   }
   target(m){
     const s=this.sessions.get(m.id);if(!s)return null;
-    if(m.type==='survey'||m.type==='infiltrate')return s.nodes[Math.min(m.progress,s.nodes.length-1)];
+    if(m.type==='survey'||m.type==='infiltrate'||m.type==='repair')return s.nodes[Math.min(m.progress,s.nodes.length-1)];
     if(m.type==='defense'&&s.active)return s.enemies.find(e=>!e.dead)||s.ship;
     return s.ship;
   }
@@ -87,18 +94,19 @@ export class Encounters {
   cue(m){
     const s=this.sessions.get(m.id);if(m.failed)return {detail:'Transport lost · restart this encounter in the log.',percent:0,canInteract:false};
     if(!s)return null;const target=this.target(m),d=target?this.sim.distance(target):Infinity;
+    if(m.type==='intercept')return {detail:s.active?`Stop the courier · ${Math.ceil(s.remaining)} s until jump · hull ${Math.max(0,Math.ceil(s.ship.hp/s.ship.maxHp*100))}%`:'Close within 1.2 km to begin interception.',percent:s.active?(1-s.remaining/90)*100:0,canInteract:false};
     if(m.type==='escort')return {detail:s.active?`${Math.round(s.routeProgress*100)}% of route · convoy hull ${Math.ceil(s.ship.hp/s.ship.maxHp*100)}%${d>1000?' · return to the convoy':''}`:'Join the freight ship within 650 m to start the escort.',percent:s.routeProgress*100,canInteract:false};
     if(m.type==='defense')return {detail:`${m.progress}/${m.count} attackers destroyed · carrier hull ${Math.ceil(s.ship.hp/s.ship.maxHp*100)}%`,percent:m.progress/m.count*100,canInteract:false};
-    const navigating=m.type==='infiltrate'&&m.progress<2,range=m.type==='survey'?220:180,maxSpeed=m.type==='survey'?55:45;
+    const navigating=m.type==='infiltrate'&&m.progress<2,range=m.type==='survey'?220:m.type==='repair'?200:180,maxSpeed=m.type==='survey'?55:45;
     const canInteract=!navigating&&d<range&&this.sim.speed<maxSpeed&&this.sim.target===target;
-    return {detail:navigating?`Fly through ${target.name} · ${Math.round(d)} m`:d>=range?`Approach ${target.name} within ${range} m`:this.sim.speed>=maxSpeed?`Brake below ${maxSpeed} m/s, then hold ${m.type==='survey'?'Scan':'Transfer'}`:`Hold Q / ${m.type==='survey'?'Scan':'Transfer'} · ${Math.max(0,s.duration-s.transfer).toFixed(1)} s`,percent:navigating?m.progress/m.count*100:s.transfer/s.duration*100,canInteract,action:m.type==='survey'?'Scan':'Transfer'};
+    return {detail:navigating?`Fly through ${target.name} · ${Math.round(d)} m`:d>=range?`Approach ${target.name} within ${range} m`:this.sim.speed>=maxSpeed?`Brake below ${maxSpeed} m/s, then hold ${m.type==='survey'?'Scan':m.type==='repair'?'Repair':'Transfer'}`:`Hold Q / ${m.type==='survey'?'Scan':m.type==='repair'?'Repair':'Transfer'} · ${Math.max(0,s.duration-s.transfer).toFixed(1)} s`,percent:navigating?m.progress/m.count*100:s.transfer/s.duration*100,canInteract,action:m.type==='survey'?'Scan':m.type==='repair'?'Repair':'Transfer'};
   }
   complete(s){
     s.m.progress=s.m.count;const title=s.m.title,result=deliver(this.state,s.m.id);
     if(!result.ok)return;this.release(s);this.sim.autopilot=false;
     if(!this.sim.target||this.sim.target.dead||this.sim.target.hidden)this.sim.target=s.ship||s.nodes?.findLast(node=>!node.hidden)||this.sim.station;
     this.sim.emit({type:'contract-complete',title,...result});
-    this.sim.emit({type:'radio',who:s.m.contact||'Outer Reach dispatch',text:`${title} complete. ${money(result.reward)} credits transferred. ${result.finished?'The relief ships are home. Cinder is yours. Keep flying.':'There’s more work on the port board when you’re ready.'}`});
+    this.sim.emit({type:'radio',who:s.m.contact||'Outer Reach dispatch',text:`${title} complete. ${money(result.reward)} credits transferred. ${result.finished?'The relief ships are home. Cinder is yours. Keep flying.':s.m.story?(BRIEFINGS[this.state.storyStage]?.paragraphs[0]||'The relief network is waiting.')+' A new personal briefing is waiting at port.':'There’s more work on the port board when you’re ready.'}`});
   }
   fail(s){
     s.m.failed=true;s.transfer=0;addLog(this.state,`${s.m.title}: the transport was lost. The encounter can be restarted from the log.`,'event');
@@ -107,7 +115,8 @@ export class Encounters {
     this.sim.emit({type:'mission-failed',text:'Transport lost. Open the log and restart the encounter to try again.'});
   }
   destroyed(enemy){
-    const s=this.sessions.get(enemy.missionId);if(s?.m.type==='defense'){
+    const s=this.sessions.get(enemy.missionId);if(s?.m.type==='intercept'){s.m.progress=s.m.count;this.complete(s);return;}
+    if(s?.m.type==='defense'){
       s.m.progress=Math.min(s.m.count,s.m.progress+1);
       if(s.m.progress>=s.m.count&&s.ship.hp>0)this.complete(s);
     }
@@ -118,9 +127,10 @@ export class Encounters {
       const m=s.m;if(m.progress>=m.count){this.complete(s);continue;}
       if(s.ship&&s.ship.hp<=0){this.fail(s);continue;}
       const target=this.target(m);if(!target)continue;
-      if(!s.announced&&this.sim.distance(target)<1350){s.announced=true;this.sim.emit({type:'radio',who:m.contact||'Local channel',text:m.type==='escort'?'There’s our freight ship. Stay with her. The raiders will go for the cargo first.':m.type==='defense'?'That carrier is carrying families. Take the attackers off her before they break the hull.':m.type==='survey'?'The recorder beacon is still alive. Approach slowly and hold Q or Scan to read it.':m.type==='infiltrate'?'Follow the shadow-lane beacons. Keep below the patrols, then transfer the evidence to Saltwater.':'We have a distress signal. Slow below 45 m/s, get within 180 m, and hold Q or Transfer.'});}
-      if(s.ship&&!s.active&&this.sim.distance(s.ship)<650){s.active=true;for(const enemy of s.enemies)enemy.encounterDormant=false;if(m.type==='defense'&&this.sim.target===s.ship)this.sim.target=this.target(m);}
-      if(m.type==='escort'&&s.active){
+      if(!s.announced&&this.sim.distance(target)<1350){s.announced=true;this.sim.emit({type:'radio',who:m.contact||'Local channel',text:m.type==='escort'?'There’s our freight ship. Stay with her. The raiders will go for the cargo first.':m.type==='defense'?'That carrier is carrying families. Take the attackers off her before they break the hull.':m.type==='survey'?'The recorder beacon is still alive. Approach slowly and hold Q or Scan to read it.':m.type==='infiltrate'?'Follow the shadow-lane beacons. Keep below the patrols, then transfer the evidence to Saltwater.':m.type==='repair'?'Three relay components are offline. Restart both couplings and the core. Get close, brake, and hold Repair.':m.type==='intercept'?'Courier on the scope. Once we close to 1.2 km, it will try to jump. Stop it before the countdown ends.':'We have a distress signal. Slow below 45 m/s, get within 180 m, and hold Q or Transfer.'});}
+      if(s.ship&&!s.active&&this.sim.distance(s.ship)<(m.type==='intercept'?1200:650)){s.active=true;for(const enemy of s.enemies)enemy.encounterDormant=false;if(m.type==='defense'&&this.sim.target===s.ship)this.sim.target=this.target(m);}
+      if(m.type==='intercept'&&s.active){s.ship.escapeTarget=s.end;s.ship.encounterDormant=false;s.remaining-=dt;s.ship.phase='Attempting escape';if(s.remaining<=0){m.failed=true;s.ship.objective=false;s.ship.hidden=true;s.ship.phase='Jump departure';this.sim.emit({type:'impact',pos:s.ship.pos.clone()});delete s.ship.missionId;delete s.ship.escapeTarget;s.objects=[];this.sessions.delete(m.id);this.sim.autopilot=false;this.sim.emit({type:'mission-failed',text:'The courier reached its jump window. Restart the interception from the log.'});continue;}}
+      else if(m.type==='escort'&&s.active){
         const enemies=s.enemies.filter(e=>!e.dead);
         const holding=this.sim.distance(s.ship)>1000||(s.routeProgress>.9&&enemies.length>0);
         s.ship.phase=holding?'Holding for escort':enemies.length?'Under attack':'Outbound convoy';
@@ -131,14 +141,15 @@ export class Encounters {
         if(s.routeProgress>=1&&!enemies.length){this.complete(s);continue;}
       }else if(m.type==='infiltrate'&&m.progress<2){
         if(this.sim.distance(target)<160){this.finishInteraction(target,'Lane confirmed');m.progress++;s.nodes[m.progress].hidden=false;this.sim.target=s.nodes[m.progress];s.transfer=0;this.sim.emit({type:'notice',text:'Shadow lane confirmed. Next contact acquired.',short:true});}
-      }else if(m.type==='rescue'||m.type==='survey'||m.type==='infiltrate'){
+      }else if(m.type==='rescue'||m.type==='survey'||m.type==='infiltrate'||m.type==='repair'){
         const cue=this.cue(m);
         if(input.interact&&cue.canInteract)s.transfer+=dt;else s.transfer=Math.max(0,s.transfer-dt*.5);
         if(s.transfer>=s.duration){
-          this.finishInteraction(target,m.type==='survey'?'Recorder decoded':m.type==='rescue'?'Supplies received':'Evidence received');target.scanned=m.type==='survey';m.progress++;s.transfer=0;
+          this.finishInteraction(target,m.type==='survey'?'Recorder decoded':m.type==='rescue'?'Supplies received':m.type==='repair'?'Power restored':'Evidence received');target.scanned=m.type==='survey';m.progress++;s.transfer=0;
           if(m.progress>=m.count){this.complete(s);continue;}
           this.sim.target=this.target(m);this.sim.autopilot=false;
-          this.sim.emit({type:'notice',text:`Black box decoded · ${m.progress}/${m.count}. Next recorder acquired.`,short:true});
+          this.sim.emit({type:'notice',text:m.type==='repair'?`Relay power restored · ${m.progress}/${m.count}. Next component acquired.`:`Black box decoded · ${m.progress}/${m.count}. Next recorder acquired.`,short:true});
+          if(m.type==='repair'&&m.progress===1&&!s.enemies.length){s.ship=target;this.ambush(s,1+(m.variant===2?1:0));s.ship=null;for(const enemy of s.enemies){enemy.attackTarget=null;enemy.encounterDormant=false;}}
           if(m.type==='survey'&&m.progress===2&&!s.enemies.length){s.ship=target;this.ambush(s,2);s.ship=null;for(const enemy of s.enemies){enemy.attackTarget=null;enemy.encounterDormant=false;}}
         }
       }

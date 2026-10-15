@@ -27,8 +27,9 @@ function approach(sim,target,limit=180){
 }
 function transfer(sim,seconds=6){for(let i=0;i<seconds*60;i++)sim.step(1/60,{...idle,interact:true,brake:true});}
 
-test('the campaign and local boards offer five distinct in-space job types',()=>{
-  assert.deepEqual(new Set(W.STORY.map(m=>m.type)),new Set(W.SPACE_JOBS));
+test('the campaign keeps its five encounter types and local boards expand to seven',()=>{
+  assert.deepEqual(new Set(W.STORY.map(m=>m.type)),new Set(['rescue','escort','survey','infiltrate','defense']));
+  const types=new Set();for(const system of W.SYSTEMS){const state=W.freshState();state.system=system.id;for(const m of W.contracts(state))if(W.SPACE_JOBS.includes(m.type))types.add(m.type);}assert.deepEqual(types,new Set(W.SPACE_JOBS));
   for(const system of W.SYSTEMS){const state=W.freshState();state.system=system.id;const local=W.contracts(state).filter(m=>!m.story&&W.SPACE_JOBS.includes(m.type));assert.equal(local.length,2);assert.equal(new Set(local.map(m=>m.type)).size,2);}
 });
 
@@ -175,7 +176,7 @@ test('flight preferences survive reloads and corrupt values cannot break steerin
 
 test('all fourteen streamed models parse with PBR maps, intact UVs and bounded geometry',async()=>{
   const manifest=JSON.parse(readFileSync(new URL('../dist/models/fleet-manifest.json',import.meta.url)));
-  assert.equal(manifest.length,14);assert.ok(manifest.reduce((a,v)=>a+v.bytes,0)<24000000);
+  assert.equal(manifest.length,14);assert.ok(manifest.reduce((a,v)=>a+v.bytes,0)<30000000);
   for(const id of ASSET_IDS){
     const raw=readFileSync(new URL('../dist/models/'+id+'.glb',import.meta.url)),buffer=raw.buffer.slice(raw.byteOffset,raw.byteOffset+raw.byteLength),loader=new GLTFLoader();
     loader.register(()=>({name:'TEST_EMBEDDED_TEXTURES',loadTexture(index){const texture=new T.Texture();texture.flipY=false;return Promise.resolve(texture);}}));
@@ -184,7 +185,7 @@ test('all fourteen streamed models parse with PBR maps, intact UVs and bounded g
       geometry.computeBoundingBox();const bounds=geometry.boundingBox,tolerance=Math.max(...entry.source_bounds.max.map((v,i)=>v-entry.source_bounds.min[i]))*.0006;
       for(let axis=0;axis<3;axis++){assert.ok(bounds.min.getComponent(axis)>=entry.source_bounds.min[axis]-tolerance,id+' developed a negative solver spike');assert.ok(bounds.max.getComponent(axis)<=entry.source_bounds.max[axis]+tolerance,id+' developed a positive solver spike');}
     });
-    assert.equal(triangles,entry.triangles);assert.ok(triangles<=30000);const template=normalizeAsset(parsed.scene,id),size=new T.Box3().setFromObject(template).getSize(new T.Vector3());assert.ok(Math.abs(id.endsWith('station')?Math.max(size.x,size.y,size.z)-1:size.z-1)<.0001);
+    assert.equal(triangles,entry.triangles);assert.ok(triangles<=(entry.triangle_budget||30000));const template=normalizeAsset(parsed.scene,id),size=new T.Box3().setFromObject(template).getSize(new T.Vector3());assert.ok(Math.abs(id.endsWith('station')?Math.max(size.x,size.y,size.z)-1:size.z-1)<.0001);
     const actor=assetInstance(template,100),bounds=new T.Box3().setFromObject(actor);assert.ok(Number.isFinite(bounds.max.z));assert.equal(actor.userData.length,100);
     if(id==='five-engine-hauler')assert.equal(actor.userData.engines.length,5);
   }

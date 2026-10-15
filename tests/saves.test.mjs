@@ -20,7 +20,7 @@ function harness(initial){
   game.saves=new VoyageSaves(memory);game.saved=game.saves.load('auto');game.state=game.saved||W.freshState();game.mode='menu';game.started=false;
   game.keys=new Set();game.pointer={fire:true,active:true};game.touch={x:.6,y:.7,fire:true,boost:true,interact:true};game.sim=new Flight(game.state);
   game.audio={start(){},event(){}};game.view={setSystem(id){this.system=id;},setShip(id){this.ship=id;}};
-  game.ui={panel:null,saveMode:'load',saveDecision:null,el:{radio:{hidden:false}},toast(...args){messages.push(args);},setMode(){},closePanel(){this.panel=null;game.clearInput();},openPanel(kind){this.panel=kind;game.clearInput();},renderPanel(){},renderTitle(){this.titleRendered=true;}};
+  game.ui={panel:null,saveMode:'load',saveDecision:null,el:{radio:{hidden:false}},toast(...args){messages.push(args);},setMode(){},closePanel(){this.panel=null;game.clearInput();},openPanel(kind){this.panel=kind;game.clearInput();},renderPanel(){},renderTitle(){this.titleRendered=true;},renderIntro(){}};
   return {game,memory,messages,restore(){if(oldDocument===undefined)delete globalThis.document;else globalThis.document=oldDocument;}};
 }
 
@@ -47,7 +47,7 @@ test('New Game restarts the opening chapter, backs up the old voyage, and preser
   const h=harness(laterVoyage());try{
     const early=W.freshState();early.credits=2500;h.game.saves.saveSlot('slot-1',early);
     h.game.action('new-game');assert.equal(h.game.ui.panel,'reset');assert.equal(h.game.state.storyStage,2);
-    h.game.action('confirm-new');assert.equal(h.game.mode,'docked');assert.equal(h.game.ui.panel,'port');assert.equal(h.game.state.storyStage,0);assert.equal(h.game.state.credits,1400);assert.equal(h.game.state.missions.length,0);assert.equal(h.game.state.system,'juniper');
+    h.game.action('confirm-new');assert.equal(h.game.mode,'intro');h.game.finishIntro();assert.equal(h.game.mode,'docked');assert.equal(h.game.ui.panel,'briefing');assert.equal(h.game.state.storyStage,0);assert.equal(h.game.state.credits,1400);assert.equal(h.game.state.missions.length,0);assert.equal(h.game.state.system,'juniper');
     assert.equal(h.game.saves.load('previous').storyStage,2);assert.equal(h.game.saves.load('previous').missions[0].progress,1);assert.equal(h.game.saves.load('slot-1').credits,2500);assert.equal(h.game.saves.load('auto').storyStage,0);
     assert.ok(W.contracts(h.game.state).some(job=>job.id==='story-0'));
   }finally{h.restore();}
@@ -61,7 +61,7 @@ test('Continue restores an existing autosave at port with its cargo, ship, and a
 
 test('overwriting a manual slot needs confirmation and Cancel leaves the earlier chapter intact',()=>{
   const h=harness();try{
-    h.game.begin(true);h.game.openSaves('save');h.game.action('save-slot',{dataset:{id:'slot-1'}});assert.equal(h.game.saves.load('slot-1').credits,1400);
+    h.game.begin(true);h.game.finishIntro();h.game.openSaves('save');h.game.action('save-slot',{dataset:{id:'slot-1'}});assert.equal(h.game.saves.load('slot-1').credits,1400);
     h.game.state.credits=5000;h.game.action('save-slot',{dataset:{id:'slot-1'}});assert.equal(h.game.ui.saveDecision.kind,'overwrite');assert.equal(h.game.saves.load('slot-1').credits,1400);
     h.game.action('cancel-save-decision');assert.equal(h.game.saves.load('slot-1').credits,1400);
     h.game.action('save-slot',{dataset:{id:'slot-1'}});h.game.action('confirm-save-decision');assert.equal(h.game.saves.load('slot-1').credits,5000);

@@ -20,3 +20,11 @@ Keep the bundled model and texture resources shared safely across instances. Avo
 Run checks appropriate to the change. Gameplay and control changes should pass the existing tests. Check the actual browser/device experience when supported, and report any verification limits honestly.
 
 `.openai/hosting.json` identifies the existing Sites deployment. Preserve that project ID when using the supported Sites publishing workflow. A GitHub commit by itself does not publish a new version to Sites. Keep the repository's visibility and hosting audience as the user has chosen them.
+
+## Production and current gameplay
+
+The user configured GitHub Pages to deploy main at / (root). Push finished changes to GitHub; root index.html opens dist/, with .nojekyll. Routine updates do not need Sites deployment or a new hosting link. Keep the older hosting manifest for provenance.
+
+Preserve the opening cinematic, chapter briefings, actual-hull hangar, illustrated common room, working crew assignments, persistent roster/trust/choices, nine systems, relay repair/interception and registry consequences. Smaller hulls move excess working crew to standby without deleting recruits. Loaded voyages remain port checkpoints.
+
+Use the shell-boundary-safe preparation pipeline and per-asset triangle_budget. Some capital hulls deliberately use up to40k triangles. Never restore the destructive reduction that created cracks.

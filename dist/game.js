@@ -1,4 +1,5 @@
-import {freshState,validateSave,stats,prices,trade,accept,deliver,abandon,upgrade,buyShip,hire,service,rescue,jump,jumpCost,systemById,addLog,money,freeHold,clamp,rng,SPACE_JOBS} from './world.js';
+import {freshState,validateSave,stats,prices,trade,accept,deliver,abandon,upgrade,buyShip,hire,service,rescue,jump,jumpCost,systemById,addLog,money,freeHold,clamp,rng,SPACE_JOBS,onDuty} from './world.js';
+import {INTRO_SHOTS,INTRO_DURATION,introFrame,BRIEFINGS,dutyChange,stationService,talkToCrew,reliefChoice} from './life.js';
 import {SpaceView,THREE} from './space.js';
 import {Flight} from './flight.js';
 import {ShipAudio} from './audio.js';
@@ -21,22 +22,34 @@ export class Game {
     if(!fresh){
       if(this.started&&this.mode==='menu'&&this.titleReturnMode){
         this.audio.start();this.ui.closePanel();this.clearInput();this.setMode(this.titleReturnMode);this.titleReturnMode=null;
-        if(this.mode==='docked'){this.ui.tab='contracts';this.ui.openPanel('port');}return true;
+        if(this.mode==='docked'){this.ui.tab='hangar';this.ui.openPanel('port');}return true;
       }
       return this.loadVoyage('auto');
     }
     const previous=this.started?this.state:this.saves.load('auto');
     if(previous&&!this.saves.backup(previous)){this.ui.toast('Could not preserve your previous voyage. Export it before starting over; your current game is unchanged.',true);return false;}
-    this.restoreVoyage(freshState());this.ui.toast('Welcome aboard Cinder. Ada’s rescue job is waiting on the contract board.');return true;
+    this.restoreVoyage(freshState());this.startIntro();return true;
   }
   restoreVoyage(state){
     this.audio.start();this.ui.closePanel();this.clearInput();
     this.state=state;if(this.state.hull<=0)rescue(this.state);this.state.shield=stats(this.state).shield;
     this.sim=new Flight(this.state,event=>this.event(event));this.view.setSystem(this.state.system);this.view.setShip(this.state.ship);
     this.started=true;this.titleReturnMode=null;this.jumpDestination=null;this.jumpT=0;this.saveTimer=0;
-    this.ui.touchMissionId=null;this.ui.lastMission='';this.ui.lastRadio=null;this.ui.saveDecision=null;this.ui.tab='contracts';
+    this.ui.touchMissionId=null;this.ui.lastMission='';this.ui.lastRadio=null;this.ui.saveDecision=null;this.ui.tab='hangar';this.ui.dialogue=null;
     this.setMode('docked');this.ui.openPanel('port');this.save();
   }
+  startIntro(replay=false){
+    if(!['menu','docked','flight'].includes(this.mode))return;
+    this.introReturnMode=this.mode;this.introReplay=replay;this.introT=0;this.introShot=-1;this.ui.introIndex=-1;
+    this.ui.closePanel();this.clearInput();this.ui.el.radio.hidden=true;this.audio.start();this.view.introTime=0;this.setMode('intro');this.ui.renderIntro(0);this.ui.el.introNext?.focus({preventScroll:true});
+  }
+  advanceIntro(){const frame=introFrame(this.introT);if(frame.index===INTRO_SHOTS.length-1)this.finishIntro();else{this.introT=frame.start+frame.duration;this.view.introTime=this.introT;this.ui.renderIntro(this.introT);}}
+  finishIntro(){
+    if(this.mode!=='intro')return;this.clearInput();
+    if(this.introReplay){this.setMode(this.introReturnMode||'menu');if(this.mode==='docked'){this.ui.tab='hangar';this.ui.openPanel('port');}return;}
+    this.state.narrative.introSeen=true;this.setMode('docked');this.ui.tab='hangar';this.ui.openPanel('briefing');this.save();
+  }
+  openBriefing(){if(this.mode==='docked'){this.ui.dialogue=null;this.ui.briefingAnswer=false;this.ui.openPanel('briefing');}}
   loadVoyage(id){
     const state=this.saves.load(id);if(!state){this.ui.toast('That save is empty or unreadable. Your current voyage is unchanged.',true);return false;}
     const previous=this.started?this.state:this.saves.load('auto');
@@ -68,7 +81,7 @@ export class Game {
   dock(){
     if(this.mode!=='flight')return;
     if(!this.sim.canDock()){this.ui.toast('Fly within 235 m of the port. Select the port and use Autopilot for an assisted approach.',true);return;}
-    this.sim.speed=0;this.sim.vel.set(0,0,0);this.sim.autopilot=false;this.state.shield=stats(this.state).shield;this.clearInput();this.setMode('docked');this.ui.tab='contracts';this.ui.openPanel('port');this.audio.event('success');this.save();
+    this.sim.speed=0;this.sim.vel.set(0,0,0);this.sim.autopilot=false;this.state.shield=stats(this.state).shield;this.clearInput();this.setMode('docked');this.ui.tab='hangar';this.ui.openPanel('port');this.audio.event('success');this.save();
     this.ui.toast(`Docking complete · ${systemById(this.state.system).port}`);
   }
   startJump(id){
@@ -90,7 +103,7 @@ export class Game {
     const result=jump(this.state,this.jumpDestination);this.ui.el.warp.classList.remove('flash');
     if(!result.ok){this.setMode('flight');this.ui.toast(result.error,true);return;}
     addLog(this.state,`Jumped to ${systemById(this.state.system).name}. ${result.cost}% fuel consumed.`,'flight');this.view.setSystem(this.state.system);this.sim.arrive();this.sim.boosting=false;this.setMode('flight');this.jumpDestination=null;this.save();
-    const sys=systemById(this.state.system),objective=this.sim.encounters.focused();this.ui.radio(this.state.crew.includes('iona')?'Iona Reed / navigation':'Ship computer',`${sys.name} orbit. ${objective?'Objective acquired: '+this.sim.target.name+'. Track the job for an assisted approach.':sys.port+' is on the scope. Autopilot can bring us into a berth.'}${sys.security===3?' Directorate patrols are active. Watch your manifest.':sys.security===0?' This is unregulated space. Keep an eye on the contacts.':''}`);
+    const sys=systemById(this.state.system),objective=this.sim.encounters.focused();this.ui.radio(onDuty(this.state,'iona')?'Iona Reed / navigation':'Ship computer',`${sys.name} orbit. ${objective?'Objective acquired: '+this.sim.target.name+'. Track the job for an assisted approach.':sys.port+' is on the scope. Autopilot can bring us into a berth.'}${sys.security===3?' Directorate patrols are active. Watch your manifest.':sys.security===0?' This is unregulated space. Keep an eye on the contacts.':''}`);
   }
   commit(result,message){
     if(!result.ok){this.ui.toast(result.error,true);return false;}
@@ -136,6 +149,23 @@ export class Game {
     if(action!=='sound')this.audio.event('click');const id=button?.dataset.id;
     if(action==='close-panel')this.ui.closePanel();
     else if(action==='continue')this.begin(false);
+    else if(action==='intro-next')this.advanceIntro();
+    else if(action==='intro-skip')this.finishIntro();
+    else if(action==='replay-intro')this.startIntro(true);
+    else if(action==='briefing')this.openBriefing();
+    else if(action==='briefing-question'){this.ui.briefingAnswer=true;this.ui.renderPanel(true);}
+    else if(action==='briefing-accept'){
+      if(this.mode!=='docked')return;const stage=this.state.storyStage;if(stage>=BRIEFINGS.length)return;
+      const existing=this.state.missions.find(m=>m.story);if(existing){this.ui.tab='contracts';this.ui.openPanel('port');return;}
+      if(this.commit(accept(this.state,'story-'+stage),'Relief contract accepted. Your next step is on the chart.')){this.state.narrative.briefed=[...new Set([...this.state.narrative.briefed,stage])];this.state.tutorial=false;this.ensureTargets(this.state.missions.find(m=>m.story));this.ui.tab='hangar';this.ui.openPanel('port');this.save();}
+    }
+    else if(action==='station-activity'){if(this.mode==='docked')this.commit(stationService(this.state,id),r=>r.text);}
+    else if(action==='relief-choice'){if(this.mode==='docked'){const r=reliefChoice(this.state,id);if(this.commit(r,v=>v.text))this.sim.encounters.sync();}}
+    else if(action==='crew-duty'){if(this.mode==='docked')this.commit(dutyChange(this.state,id,button.dataset.assign==='true'),'Crew assignments updated. Only working crew grant ship bonuses.');}
+    else if(action==='talk-crew'){if(!this.state.crew.includes(id))return;this.ui.crewSelected=id;this.ui.dialogue=null;this.ui.openPanel('mess');}
+    else if(action==='crew-topic'){if(!['flight','docked'].includes(this.mode))return;const r=talkToCrew(this.state,this.ui.crewSelected,id);if(r.ok){this.ui.dialogue=r.conversation;this.save();this.ui.renderPanel(true);}}
+    else if(action==='mess')this.ui.openPanel('mess');
+    else if(action==='registry')this.ui.openPanel('registry');
     else if(action==='title-menu')this.titleMenu();
     else if(action==='save-game')this.openSaves('save');
     else if(action==='load-game')this.openSaves('load');
@@ -146,7 +176,7 @@ export class Game {
     }
     else if(action==='load-save'){
       if(!this.saves.read(id)?.state)return;
-      if(this.started&&this.mode!=='menu'){this.ui.saveDecision={kind:'load',id};this.ui.renderPanel(true);}else this.loadVoyage(id);
+      if(this.started&&!['menu','intro'].includes(this.mode)){this.ui.saveDecision={kind:'load',id};this.ui.renderPanel(true);}else this.loadVoyage(id);
     }
     else if(action==='delete-save'){if(SAVE_SLOTS.includes(id)&&this.saves.read(id)){this.ui.saveDecision={kind:'delete',id};this.ui.renderPanel(true);}}
     else if(action==='cancel-save-decision'){this.ui.saveDecision=null;this.ui.renderPanel(true);}
@@ -168,7 +198,8 @@ export class Game {
     else if(action==='crew')this.ui.openPanel('crew');
     else if(action==='journal')this.ui.openPanel('journal');
     else if(action==='settings')this.ui.openPanel('settings');
-    else if(action==='port'){if(this.mode==='docked')this.ui.openPanel('port');}
+    else if(action==='port'){if(this.mode==='docked'){if(this.ui.panel!=='inspect')this.ui.tab='hangar';this.ui.openPanel('port');}}
+    else if(action==='filter-jobs'){if(['space','freight','all'].includes(id)){this.ui.jobFilter=id;this.ui.renderPanel();}}
     else if(action==='port-tab'){this.ui.tab=button.dataset.tab;this.ui.renderPanel();}
     else if(action==='launch')this.launch();
     else if(action==='dock')this.dock();
@@ -197,7 +228,7 @@ export class Game {
     }else if(action==='upgrade'){if(this.mode==='docked')this.commit(upgrade(this.state,id),'Upgrade installed. She’s getting better.');}
     else if(action==='inspect-ship'){if(this.mode==='docked'){this.ui.closePanel();this.inspectShip=id;this.view.inspection=true;this.view.setShip(id);this.ui.tab='shipyard';this.ui.openPanel('inspect');}}
     else if(action==='buy-ship'){
-      if(this.mode!=='docked')return;const result=buyShip(this.state,id);if(this.commit(result,'New ship registered. Your upgrades and cargo are aboard.'))this.view.setShip(id);
+      if(this.mode!=='docked')return;const result=buyShip(this.state,id);if(this.commit(result,r=>'New ship registered. '+(r.standby?.length?r.standby.length+' crew moved to standby. Recruitment and trust kept.':'Your crew, upgrades and cargo are aboard.')))this.view.setShip(id);
     }else if(action==='hire'){if(this.mode==='docked')this.commit(hire(this.state,id),'Crew member aboard. Welcome to Cinder.');}
     else if(action==='service'){if(this.mode==='docked')this.commit(service(this.state,button.dataset.service),r=>'Dock service complete · '+money(r.cost)+' cr');}
     else if(action==='relief-fuel'){
@@ -238,7 +269,8 @@ export class Game {
     document.getElementById('saveInput').addEventListener('change',event=>{this.importSave(event.target.files[0]);event.target.value='';});
     window.addEventListener('keydown',event=>{
       const key=event.code,focused=document.activeElement,typing=['SELECT','TEXTAREA'].includes(focused?.tagName)||focused?.tagName==='INPUT'&&!['range','button','checkbox'].includes(focused.type);
-      if(key==='Escape'){event.preventDefault();if(this.mode==='jump'||this.mode==='dead')return;if(this.mode==='departure'){this.cancelDeparture();return;}if(this.ui.panel)this.ui.closePanel();else if(this.mode!=='menu')this.ui.openPanel('flight-menu');return;}
+      if(key==='Escape'){event.preventDefault();if(this.mode==='intro'){this.finishIntro();return;}if(this.mode==='jump'||this.mode==='dead')return;if(this.mode==='departure'){this.cancelDeparture();return;}if(this.ui.panel)this.ui.closePanel();else if(this.mode!=='menu')this.ui.openPanel('flight-menu');return;}
+      if(this.mode==='intro'){if(['Space','Enter'].includes(key)){event.preventDefault();if(!event.repeat)this.advanceIntro();}return;}
       if(this.ui.panel){
         if(key==='Tab'){const buttons=[...this.ui.el.panelOverlay.querySelectorAll('button:not(:disabled):not([hidden]),select,input:not([hidden])')].filter(el=>el.offsetParent!==null);if(!buttons.length)return;const index=buttons.indexOf(document.activeElement),next=event.shiftKey?(index<=0?buttons.length-1:index-1):(index+1)%buttons.length;buttons[next].focus();event.preventDefault();}return;
       }
@@ -289,6 +321,7 @@ export class Game {
   makeWarp(){const root=document.getElementById('warpLines');for(let i=0;i<50;i++){const line=document.createElement('i');line.className='warp-line';line.style.setProperty('--angle',(i*7.2)+'deg');line.style.setProperty('--delay',(-Math.random()*1.1)+'s');root.append(line);}}
   frame(now){
     requestAnimationFrame(t=>this.frame(t));let dt=Math.min(.12,Math.max(0,(now-this.lastTime)/1000));this.lastTime=now;if(document.hidden)return;this.elapsed+=dt;
+    if(this.mode==='intro'){this.introT+=dt;this.view.introTime=this.introT;this.sim.introShot=introFrame(this.introT).index;this.ui.renderIntro(this.introT);if(this.introT>=INTRO_DURATION)this.finishIntro();}
     if((this.mode==='flight'||this.mode==='departure')&&!this.ui.panel){this.sim.input=this.mode==='flight'?this.input(dt):{x:0,y:0,fire:false,boost:false};for(let remaining=dt;remaining>0&&!this.ui.panel&&['flight','departure'].includes(this.mode);){const slice=Math.min(1/60,remaining);this.sim.step(slice,this.sim.input);remaining-=slice;}if(this.mode==='departure')this.engageWarp();}
     else if(this.mode==='jump'){
       this.jumpT+=dt;this.sim.speed=380;this.sim.pos.addScaledVector(new THREE.Vector3(0,0,-1).applyQuaternion(this.sim.quat),dt*380);const p=this.jumpT/3.7;this.ui.el.jumpProgress.style.width=Math.min(100,p*100)+'%';this.ui.el.jumpTime.textContent=p<.35?'ALIGNING THE DRIVE':p<.8?'CROSSING THE DARK':'A NEW HORIZON';this.ui.el.warp.classList.toggle('flash',p>.91&&p<.95);if(this.jumpT>=3.7)this.finishJump();
@@ -296,7 +329,7 @@ export class Game {
     if(!['flight','departure'].includes(this.mode)||this.ui.panel)this.sim.tickTraffic(dt);
     this.view.render(this.sim,this.mode,dt,this.elapsed);this.audio.update(this.sim,this.mode,this.elapsed);
     this.hudTimer+=dt;if(this.hudTimer>.1){this.hudTimer=0;this.ui.hud(this.elapsed);}this.ui.markers();
-    if(this.started&&this.mode!=='menu'){this.saveTimer+=dt;if(this.saveTimer>8){this.saveTimer=0;this.save();}}
+    if(this.started&&!['menu','intro'].includes(this.mode)){this.saveTimer+=dt;if(this.saveTimer>8){this.saveTimer=0;this.save();}}
   }
 }
 

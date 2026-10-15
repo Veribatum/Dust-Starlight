@@ -2,6 +2,8 @@ import * as THREE from './vendor/three.module.js';
 import { rng, hash, systemById, SHIPS, PORTS } from './world.js';
 import {makeStation,makeCommercialShip} from './models.js';
 import {loadFighter,fighterInstance} from './fighter.js';
+import {createHangar,updateHangar,updateIntro,frameHangar} from './scenes.js';
+import {introFrame} from './life.js';
 import {FleetAssets,HULL_ASSETS,STATION_ASSETS,assetInstance} from './assets.js';
 
 const hullMaterial = (color,roughness=.68) => new THREE.MeshStandardMaterial({color,roughness,metalness:.48});
@@ -137,6 +139,13 @@ export class SpaceView {
     this.camTarget=V();this.desiredCamera=V();this.lookTarget=V();this.cameraUp=V(0,1,0);this.screen=V();
     this.setSystem('juniper');
     this.playerShipId='rustwren';this.inspection=false;this.fighterTemplate=null;this.fighterStatus='loading';this.fighterPromise=this.loadFighterAsset();
+    this.hangar=createHangar();mergeStatic(this.hangar);this.scene.add(this.hangar);this.hangar.visible=false;this.dockHome=true;this.reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;this.introTime=0;this.createIntro();
+  }
+  createIntro(){
+    const group=new THREE.Group();this.scene.add(group);group.visible=false;
+    const carrier=makeCommercialShip('liner');carrier.scale.multiplyScalar(3.5);const clinic=makeCommercialShip('shuttle'),patrol=makeShip('kestrel',true);group.add(carrier,clinic,patrol);
+    const planet=makePlanet(systemById('bellwether'));group.add(planet);this.intro={group,carrier,clinic,patrol,planet};
+    for(const [key,id,length]of [['carrier','icebound-carrier',750],['clinic','frontier-transport',65]])this.assets.request(id).then(template=>{if(!template)return;group.remove(this.intro[key]);disposeObject(this.intro[key]);const mesh=assetInstance(template,length,false,getGlow(),false);this.intro[key]=mesh;group.add(mesh);});
   }
   makeStars() {
     const random=rng(54896),coords=[],colors=[];
@@ -192,7 +201,10 @@ export class SpaceView {
     if(asset){mesh=assetInstance(asset,e.length||22,e.kind==='pirate',getGlow(),e.kind!=='beacon'&&e.phase!=='Distress signal');}
     else if(e.kind==='pirate'||e.kind==='patrol'||e.kind==='trader'||e.kind==='civilian'){
       mesh=e.kind==='trader'?makeCommercialShip(e.classId):this.fighterTemplate?fighterInstance(this.fighterTemplate,e.kind==='pirate',getGlow()):makeShip('kestrel',e.kind==='pirate');if(e.kind!=='trader'){mesh.scale.multiplyScalar(1.5);mesh.userData.assetRole='fighter';mesh.userData.enemy=e.kind==='pirate';}
+      if(e.kind==='trader')mesh.scale.multiplyScalar((e.length||160)/(e.classId==='shuttle'?28:e.classId==='liner'?220:170));
       if(e.kind==='civilian'){disposeObject(mesh);mesh=makeCommercialShip('bulk');mesh.scale.multiplyScalar((e.length||100)/160);}
+    }else if(e.kind==='relay'){
+      mesh=new THREE.Group();const steel=hullMaterial('#738b91'),dark=hullMaterial('#263b47');box(mesh,[9,17,8],dark,[0,0,0]);for(const side of [-1,1]){box(mesh,[3,26,5],steel,[side*7,1,0]);box(mesh,[1,18,1],glowMaterial('#82bdaf'),[side*8,1,3]);}part(mesh,new THREE.TorusGeometry(13,1.4,6,32),steel,[0,6,0]);cylinder(mesh,.8,13,steel,[0,15,0],[0,0,0]);const light=sprite('#c6dfb0',9,.7);light.position.set(0,22,0);mesh.add(light);
     }else if(e.kind==='beacon'&&!e.assetId){
       mesh=new THREE.Group();part(mesh,new THREE.TorusGeometry(35,1.5,6,36),glowMaterial('#b49fe5'));const beacon=sprite('#d0baff',12,.8);mesh.add(beacon);
     } else if(e.kind==='ore'){
@@ -227,7 +239,12 @@ export class SpaceView {
     for(const rotor of this.station.userData.rotating||[])rotor.object.rotation.z+=dt*rotor.speed;
     this.station.userData.dockRing.material.color.set(this.sys.id==='crown'?'#95bded':'#76c6bf').multiplyScalar(.9+Math.sin(time)*.1);
     this.stars.position.copy(sim.pos);this.nebula.position.copy(sim.pos);
-    if(mode==='flight'||mode==='departure'||mode==='jump'||mode==='dead'){
+    this.local.visible=mode!=='docked'&&mode!=='intro';this.hangar.visible=mode==='docked'||mode==='intro'&&introFrame(this.introTime).index===3;this.intro.group.visible=mode==='intro'&&introFrame(this.introTime).index<3;
+    if(mode==='intro'){
+      updateIntro(this.intro,this.player,this.camera,this.introTime,this.width,this.height,this.reducedMotion);this.intro.planet.userData.material.uniforms.t.value=time;updateHangar(this.hangar,time);
+    }else if(mode==='docked'){
+      this.player.visible=true;this.player.position.set(0,0,0);this.player.scale.copy(this.player.userData.baseScale);this.player.rotation.set(0,this.inspection?time*.12:-.3,0);updateHangar(this.hangar,time);frameHangar(this.camera,this.player.userData.length||20,this.width,this.height,this.dockHome&&!this.inspection,dt);
+    }else if(mode==='flight'||mode==='departure'||mode==='jump'||mode==='dead'){
       this.player.scale.copy(this.player.userData.baseScale);this.player.position.copy(sim.pos);this.player.quaternion.copy(sim.quat);this.player.visible=mode!=='dead';
       const length=this.player.userData.length||14,back=V(0,length*.42,Math.max(21,length*1.8)+(sim.boosting?6:0)).applyQuaternion(sim.quat);this.desiredCamera.copy(sim.pos).add(back);
       this.camera.position.lerp(this.desiredCamera,1-Math.exp(-dt*7));const up=V(0,1,0).applyQuaternion(sim.quat);this.cameraUp.lerp(up,1-Math.exp(-dt*5));this.camera.up.copy(this.cameraUp);
@@ -239,7 +256,7 @@ export class SpaceView {
       this.desiredCamera.set(portrait?-740:-820,portrait?340:230,portrait?1850:1350);this.desiredCamera.x+=Math.sin(time*.05)*28;
       this.camera.position.lerp(this.desiredCamera,1-Math.exp(-dt*2));this.camera.up.set(0,1,0);this.camera.lookAt(portrait?V(0,90,60):V(90,70,150));this.camera.fov=61;this.camera.updateProjectionMatrix();
     }
-    for(const e of this.player.userData.engines){e.exhaust.visible=mode==='flight'||mode==='departure'||mode==='jump';e.exhaust.scale.y=(sim.boosting?2.0:.5+sim.throttle*.6)+(Math.random()-.5)*.1;e.flare.material.opacity=mode==='flight'?.6+sim.throttle*.3:.35;e.flare.scale.setScalar(e.baseFlare?(sim.boosting?1.5:1)*e.baseFlare:sim.boosting?6:3.5);}
+    for(const e of this.player.userData.engines){e.exhaust.visible=mode==='flight'||mode==='departure'||mode==='jump';e.exhaust.scale.y=(sim.boosting?2.0:.5+sim.throttle*.6)+(Math.random()-.5)*.1;e.flare.material.opacity=['docked','intro'].includes(mode)?0:mode==='flight'?.6+sim.throttle*.3:.35;e.flare.scale.setScalar(e.baseFlare?(sim.boosting?1.5:1)*e.baseFlare:sim.boosting?6:3.5);}
     this.syncEntities(sim.entities,dt);this.syncBullets(sim.bullets);
     for(let i=this.effects.length-1;i>=0;i--){const e=this.effects[i];e.life-=dt;for(const particle of e.object.children){particle.position.addScaledVector(particle.userData.velocity,dt);particle.material.opacity=Math.max(0,e.life/e.total);}if(e.life<=0){this.scene.remove(e.object);disposeObject(e.object);this.effects.splice(i,1);}}
     if(sim.shake>0&&(mode==='flight'||mode==='jump')){this.camera.position.x+=(Math.random()-.5)*sim.shake;this.camera.position.y+=(Math.random()-.5)*sim.shake;}
