@@ -1,0 +1,528 @@
+[
+  {
+    "id": "relay-station",
+    "source": "Meshy_AI_interstellar_space_st_1013233859_texture.glb",
+    "source_sha256": "cffc9da14b29b4d588a9757d090442b0476dc94911736338cd81f417f6c2bbd2",
+    "source_bytes": 9199756,
+    "bytes": 881672,
+    "original_triangles": 3820,
+    "triangles": 3820,
+    "textures": [
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ]
+    ],
+    "source_bounds": {
+      "min": [
+        -0.5322539806365967,
+        -0.9565989971160889,
+        -0.3113290071487427
+      ],
+      "max": [
+        0.5586689710617065,
+        0.9511439800262451,
+        0.3157550096511841
+      ]
+    }
+  },
+  {
+    "id": "cristal-station",
+    "source": "Meshy_AI_Space_Station_Cristal_1013233654_texture.glb",
+    "source_sha256": "16b95820dc4418194a1742862059787c70a01a2ecbb009e15dff5885a69c5e15",
+    "source_bytes": 9999152,
+    "bytes": 1277124,
+    "original_triangles": 9892,
+    "triangles": 9892,
+    "textures": [
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ]
+    ],
+    "source_bounds": {
+      "min": [
+        -1.0007699728012085,
+        -1.0026799440383911,
+        -1.0024100542068481
+      ],
+      "max": [
+        0.9977009892463684,
+        0.960195004940033,
+        0.9970639944076538
+      ]
+    }
+  },
+  {
+    "id": "icebound-carrier",
+    "source": "Icebound_Carrier.glb",
+    "source_sha256": "c0f3abeb44acba994272aa4cd7acb6f462a04fcb44bc0643e2c8978bb24987dc",
+    "source_bytes": 47088420,
+    "bytes": 1860212,
+    "original_triangles": 600494,
+    "triangles": 29999,
+    "textures": [
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ]
+    ],
+    "source_bounds": {
+      "min": [
+        -0.9514539837837219,
+        -0.23370200395584106,
+        -0.3606489896774292
+      ],
+      "max": [
+        0.9488199949264526,
+        0.23122599720954895,
+        0.3579680025577545
+      ]
+    }
+  },
+  {
+    "id": "five-engine-hauler",
+    "source": "long_hulled_5_engine.glb",
+    "source_sha256": "31a5fbcc1dcced07642aa78716a9951ce6e5ce0a97a18a9bd67cc8d5f8369110",
+    "source_bytes": 25173200,
+    "bytes": 1659648,
+    "original_triangles": 507928,
+    "triangles": 20000,
+    "textures": [
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ]
+    ],
+    "source_bounds": {
+      "min": [
+        -0.951662003993988,
+        -0.3666369915008545,
+        -0.30876100063323975
+      ],
+      "max": [
+        0.9678800106048584,
+        0.3674269914627075,
+        0.3093859851360321
+      ]
+    }
+  },
+  {
+    "id": "spire-cruiser",
+    "source": "Meshy_AI__0928010253_texture.glb",
+    "source_sha256": "00b3dcc5966e92bce1f91f83d81774ad9e68607a2151b455c76c193babacd362",
+    "source_bytes": 78602108,
+    "bytes": 2111784,
+    "original_triangles": 1277464,
+    "triangles": 29999,
+    "textures": [
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ]
+    ],
+    "source_bounds": {
+      "min": [
+        -0.25119999051094055,
+        -0.40036702156066895,
+        -0.9999741315841675
+      ],
+      "max": [
+        0.2511749863624573,
+        0.4003670811653137,
+        0.9999620914459229
+      ]
+    }
+  },
+  {
+    "id": "scout",
+    "source": "Meshy_AI_A_standalone_sleek_sc_0928010608_texture.glb",
+    "source_sha256": "148b6bb41e7915172195885804f981c102dd19a47beeb8c6ee1ad89bdb4a916e",
+    "source_bytes": 52663148,
+    "bytes": 1555688,
+    "original_triangles": 620031,
+    "triangles": 20000,
+    "textures": [
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ]
+    ],
+    "source_bounds": {
+      "min": [
+        -0.9507499933242798,
+        -0.22255003452301025,
+        -0.7597491145133972
+      ],
+      "max": [
+        0.9487320184707642,
+        0.22027002274990082,
+        0.7578931450843811
+      ]
+    }
+  },
+  {
+    "id": "azure-voyager",
+    "source": "Meshy_AI_Azure_Voyager_0928010427_texture.glb",
+    "source_sha256": "0c23c47ce36114e36ba3706f920267819004ef7d14a896a4b8bc09ea76a0d884",
+    "source_bytes": 68232100,
+    "bytes": 1571460,
+    "original_triangles": 1111255,
+    "triangles": 20000,
+    "textures": [
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ]
+    ],
+    "source_bounds": {
+      "min": [
+        -0.941228985786438,
+        -0.46109405159950256,
+        -0.9511831402778625
+      ],
+      "max": [
+        0.9376519918441772,
+        0.4570610523223877,
+        0.949467122554779
+      ]
+    }
+  },
+  {
+    "id": "crimson-vanguard",
+    "source": "Meshy_AI_Crimson_Vanguard_0928004443_texture.glb",
+    "source_sha256": "9d690d120cde17adc0f46796c75e2c808f8428ecb5ebbc45b541d98bc27e313d",
+    "source_bytes": 45100588,
+    "bytes": 1885132,
+    "original_triangles": 1234886,
+    "triangles": 20000,
+    "textures": [
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ]
+    ],
+    "source_bounds": {
+      "min": [
+        -0.9506180286407471,
+        -0.4437049925327301,
+        -0.6616439819335938
+      ],
+      "max": [
+        0.9485880136489868,
+        0.44057801365852356,
+        0.659807026386261
+      ]
+    }
+  },
+  {
+    "id": "leviathan",
+    "source": "Meshy_AI_Leviathan_of_the_Void_0928004611_texture.glb",
+    "source_sha256": "3ac25c483919a3bb42f10392a01a0d38fcae0456762c76913c8e97802a7a8819",
+    "source_bytes": 19931564,
+    "bytes": 1472976,
+    "original_triangles": 401794,
+    "triangles": 29999,
+    "textures": [
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ]
+    ],
+    "source_bounds": {
+      "min": [
+        -0.9505739808082581,
+        -0.19374099373817444,
+        -0.3541580140590668
+      ],
+      "max": [
+        0.9485189914703369,
+        0.19457200169563293,
+        0.35195600986480713
+      ]
+    }
+  },
+  {
+    "id": "machine-frigate",
+    "source": "Meshy_AI_machine_frigate_0928011610_texture.glb",
+    "source_sha256": "36c905d87296a26837d76de8aa6839c14f691cddcc8177e3a85853003f505542",
+    "source_bytes": 11102412,
+    "bytes": 1423836,
+    "original_triangles": 23855,
+    "triangles": 20000,
+    "textures": [
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ]
+    ],
+    "source_bounds": {
+      "min": [
+        -0.9530332684516907,
+        -0.23679059743881226,
+        -0.5068492889404297
+      ],
+      "max": [
+        0.9530332088470459,
+        0.23679065704345703,
+        0.5068492889404297
+      ]
+    }
+  },
+  {
+    "id": "spirit-of-fire",
+    "source": "Meshy_AI_Spirit_of_Fire_0928003231_texture.glb",
+    "source_sha256": "86b016150f29a9e644bc49bde112e3cbabf43ecce302e3a13b50abca4bf35fc4",
+    "source_bytes": 41681880,
+    "bytes": 1944524,
+    "original_triangles": 1024867,
+    "triangles": 20000,
+    "textures": [
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ]
+    ],
+    "source_bounds": {
+      "min": [
+        -0.9507009983062744,
+        -0.2794470191001892,
+        -0.5132410526275635
+      ],
+      "max": [
+        0.9486600160598755,
+        0.27749103307724,
+        0.5115700364112854
+      ]
+    }
+  },
+  {
+    "id": "mothership",
+    "source": "Meshy_AI_Ultra_realistic_mothe_0928005956_texture.glb",
+    "source_sha256": "91f32867fceb74705d384adab8dc83e389764893c712b23d7aa8f68702f8491a",
+    "source_bytes": 25870648,
+    "bytes": 2021096,
+    "original_triangles": 457227,
+    "triangles": 30000,
+    "textures": [
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ]
+    ],
+    "source_bounds": {
+      "min": [
+        -0.9484469890594482,
+        -0.26107004284858704,
+        -0.40096306800842285
+      ],
+      "max": [
+        0.9459220170974731,
+        0.2592330276966095,
+        0.3978060483932495
+      ]
+    }
+  },
+  {
+    "id": "frontier-transport",
+    "source": "Meshy_AI_Using_the_supplied_im_0927155333_texture.glb",
+    "source_sha256": "447dea4f702d24feead33f5037c0681af520a70a5452da13c6cc65cb3dd45d9e",
+    "source_bytes": 35864856,
+    "bytes": 2143548,
+    "original_triangles": 780582,
+    "triangles": 20000,
+    "textures": [
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ]
+    ],
+    "source_bounds": {
+      "min": [
+        -0.9507539868354797,
+        -0.20582303404808044,
+        -0.44201505184173584
+      ],
+      "max": [
+        0.9488769769668579,
+        0.19722603261470795,
+        0.4401770532131195
+      ]
+    }
+  },
+  {
+    "id": "vortex-z3",
+    "source": "Meshy_AI_Vortex_Z3_0928011344_texture.glb",
+    "source_sha256": "0c62a06d92a4db55d4f01f6d8dce2923739c1fbd52f2a48dc7cbf2be5c4b3a0d",
+    "source_bytes": 36524164,
+    "bytes": 1457216,
+    "original_triangles": 855941,
+    "triangles": 20000,
+    "textures": [
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ],
+      [
+        1024,
+        1024
+      ]
+    ],
+    "source_bounds": {
+      "min": [
+        -0.9504621624946594,
+        -0.2836242914199829,
+        -0.641287088394165
+      ],
+      "max": [
+        0.9487992525100708,
+        0.2829774022102356,
+        0.6394777297973633
+      ]
+    }
+  }
+]

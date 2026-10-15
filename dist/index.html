@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101a21">
+  <meta name="description" content="Captain a worn-out freighter in an original 3D frontier space adventure. Trade cargo, take contracts, outrun patrols, and keep flying.">
+  <title>Dust & Starlight — A Frontier Space Adventure</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%23111d25'/%3E%3Cpath d='M32 9L37 26 55 32 37 38 32 55 27 38 9 32 27 26Z' fill='%23ddb57d'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./polish.css">
+  <link rel="stylesheet" href="./encounters.css">
+  <link rel="stylesheet" href="./touch.css">
+</head>
+<body>
+<svg aria-hidden="true" class="svg-defs" xmlns="http://www.w3.org/2000/svg"><defs>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 2 2.7 7.3L22 12l-7.3 2.7L12 22l-2.7-7.3L2 12l7.3-2.7Z"/></symbol>
+  <symbol id="i-map" viewBox="0 0 24 24"><circle cx="6" cy="17" r="2.5"/><circle cx="17" cy="5" r="2.5"/><circle cx="18" cy="17" r="2.5"/><path d="m7.8 15 7.5-8M8.5 17h7M17.2 7.5l.6 7"/></symbol>
+  <symbol id="i-ship" viewBox="0 0 24 24"><path d="m12 2 4 9 5 7-6-2-3 5-3-5-6 2 5-7Z"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 1v5m0 12v5M1 12h5m12 0h5"/></symbol>
+  <symbol id="i-boost" viewBox="0 0 24 24"><path d="m13 2-8 12h6l-1 8 9-13h-6Z"/></symbol>
+  <symbol id="i-dock" viewBox="0 0 24 24"><path d="M3 4v16h18V4M7 8h10v8H7Z"/><path d="M12 2v10m-3-3 3 3 3-3"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h16m-6-6 6 6-6 6"/></symbol>
+  <symbol id="i-crew" viewBox="0 0 24 24"><circle cx="12" cy="7" r="3"/><path d="M6 21v-3a6 6 0 0 1 12 0v3M3 9a3 3 0 0 0 0 6m18-6a3 3 0 0 1 0 6"/></symbol>
+  <symbol id="i-log" viewBox="0 0 24 24"><path d="M5 3h14v18H5ZM9 8h6m-6 4h6m-6 4h4"/></symbol>
+  <symbol id="i-sound" viewBox="0 0 24 24"><path d="m4 9 4 0 5-4v14l-5-4H4Zm12-1a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/></symbol>
+  <symbol id="i-expand" viewBox="0 0 24 24"><path d="M3 9V3h6m6 0h6v6m0 6v6h-6M9 21H3v-6"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+</defs></svg>
+<main id="app" data-mode="menu">
+  <canvas id="space" aria-label="3D space flight view"></canvas>
+  <div class="vignette" aria-hidden="true"></div>
+  <div id="loading"><div class="loading-star">✦</div><span>OPENING THE OUTER REACH</span><small>Warming up an old engine…</small></div>
+  <div id="graphicsError" hidden></div>
+
+  <section id="menu" aria-label="Main menu">
+    <div class="menu-content">
+      <div class="eyebrow"><span class="tiny-star">✦</span> A FRONTIER SPACE ADVENTURE</div>
+      <h1>DUST <em>&</em><br>STARLIGHT<span class="title-period">.</span></h1>
+      <p class="menu-line">A ship. A crew.<br>A sky full of trouble.</p>
+      <p class="menu-desc">Find work on the edge of civilization. Haul what pays, help who you can, and keep your ship flying.</p>
+      <div class="menu-buttons">
+        <button id="continueBtn" class="btn primary large" hidden><span>CONTINUE VOYAGE</span><svg><use href="#i-arrow"/></svg></button>
+        <button id="newBtn" class="btn primary large"><span>BEGIN YOUR VOYAGE</span><svg><use href="#i-arrow"/></svg></button>
+        <button id="menuHelp" class="text-btn">How to fly <span>↗</span></button>
+      </div>
+      <div id="resumeInfo" class="resume-info" hidden></div>
+    </div>
+    <div class="menu-bottom"><span>THE OUTER REACH · 6 SYSTEMS · YOUR RULES</span><span>INDEPENDENT FLIGHT / 01</span></div>
+    <div class="menu-stamp"><span>REGISTERED FREIGHTER</span><strong>CINDER</strong><small>RUSTWREN CLASS · BERTH 04</small></div>
+  </section>
+
+  <section id="hud" aria-label="Flight instruments" hidden>
+    <header class="topbar">
+      <div class="brand"><svg><use href="#i-star"/></svg><span>DUST <em>&</em> STARLIGHT</span></div>
+      <nav class="topnav" aria-label="Game menus">
+        <button class="nav-btn" data-action="map" title="Star chart (G)"><svg><use href="#i-map"/></svg><span>Star chart</span><kbd>G</kbd></button>
+        <button class="nav-btn" data-action="crew" title="Crew (C)"><svg><use href="#i-crew"/></svg><span>Crew</span><kbd>C</kbd></button>
+        <button class="nav-btn" data-action="journal" title="Captain’s log (L)"><svg><use href="#i-log"/></svg><span>Log</span></button>
+        <button class="nav-btn icon-only" data-action="settings" title="Settings & help" aria-label="Settings and help">?</button>
+        <button class="nav-btn icon-only" data-action="fullscreen" title="Fullscreen" aria-label="Toggle fullscreen"><svg><use href="#i-expand"/></svg></button>
+      </nav>
+      <button id="musicBtn" class="music-chip" data-action="music" aria-label="Toggle music"><span class="equalizer"><i></i><i></i><i></i><i></i></span><span id="musicName">Music</span></button>
+      <div class="balance"><span id="creditCount">1,400</span><small>CR</small></div>
+    </header>
+    <div class="location"><div class="eyebrow">CURRENT SYSTEM</div><h2 id="locName">JUNIPER</h2><span id="locMeta">FREE SETTLEMENTS / FRINGE</span></div>
+    <button id="missionCard" class="mission-card" data-action="journal"><span class="mission-kicker">CAPTAIN’S OBJECTIVE <span>↗</span></span><strong id="missionTitle">Find your next job</strong><span id="missionObjective">Open the contract board at Mercy Anchorage.</span><span id="objectiveProgress" class="objective-progress" hidden><i></i></span></button>
+    <div class="flight-status" id="flightStatus"><i></i><span id="flightMode">MANUAL FLIGHT</span><span id="trafficCount">14 COMMERCIAL CONTACTS</span></div>
+    <div id="heatDisplay" class="heat-display" hidden></div>
+    <div id="markers" aria-label="Nearby targets"></div>
+    <div class="reticle" id="reticle" aria-hidden="true"><span></span><span></span><span></span><span></span><i></i></div>
+    <div id="aimHint" class="aim-hint" hidden>FIRING SOLUTION</div>
+    <div id="leadMarker" class="lead-marker" hidden aria-hidden="true"></div>
+    <div id="mouseGuide" class="mouse-guide" hidden aria-hidden="true"><i></i></div>
+
+    <div class="ship-panel">
+      <div class="ship-panel-title"><svg><use href="#i-ship"/></svg><strong id="shipLabel">CINDER</strong><span id="shipClass">RUSTWREN</span></div>
+      <div class="meter-row"><span>HULL</span><div class="meter"><i id="hullBar"></i></div><b id="hullText">100</b></div>
+      <div class="meter-row"><span>SHIELD</span><div class="meter shield"><i id="shieldBar"></i></div><b id="shieldText">90</b></div>
+      <div class="meter-row"><span>POWER</span><div class="meter power"><i id="powerBar"></i></div><b id="powerText">100</b></div>
+      <div class="ship-readings"><span>FUEL <b id="fuelText">100</b>%</span><span>HOLD <b id="holdText">0/30</b> t</span><span>MIS <b id="missileText">8</b></span></div>
+    </div>
+    <div class="speed-panel"><strong id="speedText">0</strong><span>M / S</span><div class="throttle-wrap"><label for="throttle">THRUST <span id="throttleText">35%</span></label><input id="throttle" type="range" min="0" max="100" value="35" aria-label="Engine thrust"></div><button class="brake-button" data-action="brake">BRAKE <kbd>B</kbd></button><button id="mouseBtn" class="mouse-btn" data-action="mouse-flight" title="Toggle mouse flight (T)">Mouse flight <kbd>T</kbd></button></div>
+    <div class="radar"><canvas id="radar" width="170" height="170" aria-label="Radar: nearby contacts"></canvas><span>LOCAL SCAN</span></div>
+    <div class="target-card" id="targetCard"><span id="targetKind">PORT / FRIENDLY</span><strong id="targetName">Mercy Anchorage</strong><div><span id="targetDistance">580 m</span><span id="targetHealth"></span></div></div>
+    <div class="flight-actions">
+      <button class="action-btn" data-action="target" title="Next target (Tab)"><svg><use href="#i-target"/></svg><span>Target</span></button>
+      <button id="autoBtn" class="action-btn" data-action="autopilot" title="Autopilot to target (V)"><svg><use href="#i-arrow"/></svg><span>Autopilot</span></button>
+      <button id="dockBtn" class="action-btn" data-action="dock" title="Dock when in range (E)"><svg><use href="#i-dock"/></svg><span>Dock</span></button>
+      <button id="rocketBtn" class="action-btn" data-action="missile" title="Fire missile (M)"><span class="missile-icon">↟</span><span>Missile</span></button>
+      <button id="boostBtn" class="action-btn boost-btn" title="Hold to boost (Shift)" aria-label="Hold to boost"><svg><use href="#i-boost"/></svg><span>Boost</span></button>
+      <button id="fireBtn" class="action-btn fire-btn" title="Hold to fire (Space)" aria-label="Hold to fire cannons"><svg><use href="#i-target"/></svg><span>Fire</span></button>
+      <button id="interactBtn" class="action-btn interact-btn" title="Hold to scan or transfer (Q)" aria-label="Hold to scan or transfer" hidden><svg><use href="#i-log"/></svg><span>Transfer</span><kbd>Q</kbd></button>
+    </div>
+    <div class="flight-hint">CLICK VIEW <span>MOUSE FLIGHT</span> &nbsp; R / F <span>THRUST</span> &nbsp; B <span>BRAKE</span> &nbsp; Q <span>SCAN / TRANSFER</span></div>
+    <div id="joystick" class="joystick" aria-label="Drag to steer"><div class="joystick-ring"><i id="stick"></i></div><span>FLIGHT CONTROL</span></div>
+    <div id="berthBar" class="berth-bar"><span>BERTH 04 · ENGINES STANDING BY</span><button class="btn secondary" data-action="port">Open port</button><button class="btn primary" data-action="launch">Launch ship <svg><use href="#i-arrow"/></svg></button></div>
+    <div id="scanWarning" class="scan-warning" hidden><strong>DIRECTORATE CARGO SCAN</strong><span id="scanText">9.0 s · Boost out of patrol range</span></div>
+    <div id="mobileCockpit" class="mobile-cockpit" aria-label="Touch flight controls">
+      <header id="mobileHeader" class="mobile-header">
+        <button data-action="flight-menu" class="touch-menu" aria-label="Open captain’s menu"><span></span><span></span><span></span></button>
+        <strong id="mobileSystem">JUNIPER</strong><span id="mobileCredits">1,400 <small>cr</small></span>
+        <button class="touch-chart" data-action="map" aria-label="Open star chart"><svg><use href="#i-map"/></svg></button>
+      </header>
+      <div id="mobileVitals" class="mobile-vitals" aria-label="Ship integrity">
+        <span><b>HULL</b><strong id="mobileHullValue">100%</strong><i><em id="mobileHullBar"></em></i></span><span><b>SHIELD</b><strong id="mobileShieldValue">100%</strong><i><em id="mobileShieldBar"></em></i></span><span><b>POWER</b><strong id="mobilePowerValue">100%</strong><i><em id="mobilePowerBar"></em></i></span>
+      </div>
+      <button id="mobileObjective" class="mobile-objective" data-action="track-current" aria-label="Track current objective"><strong id="mobileObjectiveTitle">Free flight</strong><span id="mobileObjectiveHint">Find work at the port</span><svg><use href="#i-arrow"/></svg><i><em id="mobileProgress"></em></i></button>
+      <div id="mobileThrust" class="mobile-thrust"><div><strong id="mobileSpeed">0</strong><small>m/s</small></div><div id="touchThrottle" class="touch-throttle" role="slider" tabindex="0" aria-label="Thrust" aria-valuemin="0" aria-valuemax="100" aria-valuenow="35"><span><i id="touchThrottleFill"></i><b id="touchThrottleHandle"></b></span></div><button data-action="brake" aria-label="Brake and stop">STOP</button></div>
+      <button id="mobileFire" class="touch-round touch-fire" aria-label="Hold to fire cannons"><svg><use href="#i-target"/></svg><span>FIRE</span></button>
+      <button id="mobileBoost" class="touch-round touch-boost" aria-label="Hold to boost"><svg><use href="#i-boost"/></svg></button>
+      <button id="mobileMissile" class="touch-round touch-missile" data-action="missile" aria-label="Fire missile"><span>↟</span><small id="mobileMissileCount">8</small></button>
+      <button id="mobileTargetCycle" class="touch-round touch-cycle" data-action="target" aria-label="Next target"><svg><use href="#i-target"/></svg></button>
+      <div id="mobileTargetInfo" class="mobile-target-info" hidden></div>
+      <button id="mobileContext" class="mobile-context" data-action="touch-context"><svg><use href="#i-arrow"/></svg><span>Autopilot approach</span></button>
+    </div>
+    <div id="safeAreaProbe" class="safe-area-probe" aria-hidden="true"></div>
+  </section>
+
+  <div id="radio" class="radio" hidden><div class="radio-icon">∿</div><button class="radio-body" data-action="radio-message" aria-label="Read full transmission"><span id="radioWho">INCOMING TRANSMISSION</span><p id="radioText"></p></button><button data-action="dismiss-radio" aria-label="Dismiss transmission">×</button></div>
+  <div id="toasts" aria-live="polite"></div>
+  <section id="panelOverlay" class="panel-overlay" hidden><div class="panel" id="panel" role="dialog" aria-modal="true" aria-labelledby="panelTitle"><div class="panel-header"><div id="panelMark" class="panel-mark" aria-hidden="true"></div><div><div class="eyebrow" id="panelEyebrow">PORT AUTHORITY</div><h2 id="panelTitle">Mercy Anchorage</h2><p id="panelSubtitle">JUNIPER · FREE SETTLEMENTS</p></div><div class="panel-budget"><span>AVAILABLE FUNDS</span><strong id="panelBalance">1,400</strong><small>CREDITS</small></div><button id="panelClose" class="close-btn" aria-label="Close panel"><svg><use href="#i-close"/></svg></button></div><div id="panelTabs"></div><div id="panelContent" class="panel-content"></div><div class="panel-footer"><span id="panelFootnote">LOCAL PROGRESS AUTOSAVES</span><button id="panelLaunch" class="btn primary" data-action="launch">Launch ship <svg><use href="#i-arrow"/></svg></button></div></div></section>
+  <div id="warp" aria-hidden="true"><div class="warp-lines" id="warpLines"></div><div class="warp-content"><span>JUMP DRIVE ENGAGED</span><h2 id="jumpName">Bellwether</h2><p id="jumpTime">CHARTING A WAY THROUGH</p><div class="jump-progress"><i id="jumpProgress"></i></div></div></div>
+  <div id="death" class="death-screen" hidden><span class="eyebrow">SIGNAL LOST / RESCUE TUG INBOUND</span><h2>Still breathing.</h2><p>Your ship took a beating. A tug can get you back to port.<br>You’ll lose half your loose cargo and pay a tow bill.</p><button class="btn primary" data-action="rescue">Bring us home <svg><use href="#i-arrow"/></svg></button><small>Contract cargo stays with the crew.</small></div>
+  <input id="saveInput" type="file" accept="application/json,.json" hidden>
+</main>
+<noscript><p class="no-js">Enable JavaScript to fly Dust & Starlight.</p></noscript>
+<script type="module" src="./game.js"></script>
+</body>
+</html>
